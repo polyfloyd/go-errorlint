@@ -46,7 +46,7 @@ func lintFmtErrorfCalls(fset *token.FileSet, info types.Info) []Lint {
 			if len(formatVerbs) >= i && formatVerbs[i] != "%w" {
 				lints = append(lints, Lint{
 					Message: "non-wrapping format verb for fmt.Errorf. Use `%w` to format errors",
-					Pos:     fset.Position(expr.Pos()),
+					Pos:     fset.Position(arg.Pos()),
 				})
 			}
 		}
