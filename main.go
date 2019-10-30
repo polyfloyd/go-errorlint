@@ -5,28 +5,35 @@ import (
 	"fmt"
 	"go/ast"
 	"go/constant"
-	"go/importer"
-	"go/parser"
 	"go/token"
 	"go/types"
-	"log"
 	"os"
 	"regexp"
+
+	"golang.org/x/tools/go/packages"
 )
 
 func main() {
 	flag.Parse()
-	sourceFiles := flag.Args()
 
-	if len(sourceFiles) == 0 {
-		log.Fatal("no source files")
+	cfg := &packages.Config{
+		Mode: packages.NeedTypes | packages.NeedTypesInfo,
 	}
-
-	lints, err := lint(sourceFiles...)
+	pkgs, err := packages.Load(cfg, flag.Args()...)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "%v\n", err)
+		fmt.Fprintf(os.Stderr, "load: %v\n", err)
 		os.Exit(100)
 	}
+	if packages.PrintErrors(pkgs) > 0 {
+		os.Exit(100)
+	}
+
+	lints := []Lint{}
+	for _, pkg := range pkgs {
+		l := lintFmtErrorfCalls(pkg.Fset, *pkg.TypesInfo)
+		lints = append(lints, l...)
+	}
+
 	for _, lint := range lints {
 		fmt.Fprintf(os.Stderr, "%s: %s\n", lint.Pos, lint.Message)
 	}
@@ -40,30 +47,7 @@ type Lint struct {
 	Pos     token.Position
 }
 
-func lint(sourceFiles ...string) ([]Lint, error) {
-	fset := token.NewFileSet()
-	astFiles := make([]*ast.File, len(sourceFiles))
-	for i, filename := range sourceFiles {
-		f, err := parser.ParseFile(fset, filename, nil, 0)
-		if err != nil {
-			return nil, err
-		}
-		astFiles[i] = f
-	}
-
-	info := types.Info{
-		Types: make(map[ast.Expr]types.TypeAndValue),
-		Defs:  make(map[*ast.Ident]types.Object),
-		Uses:  make(map[*ast.Ident]types.Object),
-	}
-	conf := types.Config{
-		Importer: importer.Default(),
-	}
-	_, err := conf.Check("test", fset, astFiles, &info)
-	if err != nil {
-		return nil, err
-	}
-
+func lintFmtErrorfCalls(fset *token.FileSet, info types.Info) []Lint {
 	lints := []Lint{}
 	for expr, t := range info.Types {
 		// Search for error expressions that are the result of fmt.Errorf
@@ -95,7 +79,7 @@ func lint(sourceFiles ...string) ([]Lint, error) {
 			}
 		}
 	}
-	return lints, nil
+	return lints
 }
 
 func printfFormatStringVerbs(info types.Info, call *ast.CallExpr) ([]string, bool) {
