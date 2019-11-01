@@ -164,3 +164,59 @@ func isErrorComparison(info types.Info, binExpr *ast.BinaryExpr) bool {
 	ty := info.Types[binExpr.Y]
 	return tx.Type.String() == "error" || ty.Type.String() == "error"
 }
+
+func lintErrorTypeAssertions(fset *token.FileSet, info types.Info) []Lint {
+	lints := []Lint{}
+
+	for expr := range info.Types {
+		// Find type assertions.
+		typeAssert, ok := expr.(*ast.TypeAssertExpr)
+		if !ok {
+			continue
+		}
+
+		// Find type assertions that operate on values of type error.
+		if !isErrorTypeAssertion(info, typeAssert) {
+			continue
+		}
+
+		lints = append(lints, Lint{
+			Message: "type assertion on error will fail on wrapped errors. Use errors.As to check for specific errors",
+			Pos:     fset.Position(typeAssert.Pos()),
+		})
+	}
+
+	for scope := range info.Scopes {
+		// Find type switches.
+		typeSwitch, ok := scope.(*ast.TypeSwitchStmt)
+		if !ok {
+			continue
+		}
+
+		// Find the type assertion in the type switch.
+		var typeAssert *ast.TypeAssertExpr
+		switch t := typeSwitch.Assign.(type) {
+		case *ast.ExprStmt:
+			typeAssert = t.X.(*ast.TypeAssertExpr)
+		case *ast.AssignStmt:
+			typeAssert = t.Rhs[0].(*ast.TypeAssertExpr)
+		}
+
+		// Check whether the type switch is on a value of type error.
+		if !isErrorTypeAssertion(info, typeAssert) {
+			continue
+		}
+
+		lints = append(lints, Lint{
+			Message: "type switch on error will fail on wrapped errors. Use errors.As to check for specific errors",
+			Pos:     fset.Position(typeAssert.Pos()),
+		})
+	}
+
+	return lints
+}
+
+func isErrorTypeAssertion(info types.Info, typeAssert *ast.TypeAssertExpr) bool {
+	t := info.Types[typeAssert.X]
+	return t.Type.String() == "error"
+}

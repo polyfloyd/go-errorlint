@@ -30,6 +30,8 @@ func main() {
 		lints = append(lints, l...)
 		l = lintErrorComparisons(pkg.Fset, *pkg.TypesInfo)
 		lints = append(lints, l...)
+		l = lintErrorTypeAssertions(pkg.Fset, *pkg.TypesInfo)
+		lints = append(lints, l...)
 	}
 	sort.Sort(ByPosition(lints))
 
