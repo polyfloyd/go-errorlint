@@ -16,9 +16,16 @@ type Lint struct {
 
 type ByPosition []Lint
 
-func (l ByPosition) Len() int           { return len(l) }
-func (l ByPosition) Less(i, j int) bool { return l[i].Pos.Offset < l[j].Pos.Offset }
-func (l ByPosition) Swap(i, j int)      { l[i], l[j] = l[j], l[i] }
+func (l ByPosition) Len() int      { return len(l) }
+func (l ByPosition) Swap(i, j int) { l[i], l[j] = l[j], l[i] }
+
+func (l ByPosition) Less(i, j int) bool {
+	a, b := l[i].Pos, l[j].Pos
+	if a.Filename == b.Filename {
+		return a.Offset < b.Offset
+	}
+	return a.Filename < b.Filename
+}
 
 func lintFmtErrorfCalls(fset *token.FileSet, info types.Info) []Lint {
 	lints := []Lint{}
