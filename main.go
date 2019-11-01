@@ -28,6 +28,8 @@ func main() {
 	for _, pkg := range pkgs {
 		l := lintFmtErrorfCalls(pkg.Fset, *pkg.TypesInfo)
 		lints = append(lints, l...)
+		l = lintErrorComparisons(pkg.Fset, *pkg.TypesInfo)
+		lints = append(lints, l...)
 	}
 	sort.Sort(ByPosition(lints))
 

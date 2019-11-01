@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"go/ast"
 	"go/constant"
 	"go/token"
@@ -88,4 +89,71 @@ func isFmtErrorfCallExpr(info types.Info, expr ast.Expr) (*ast.CallExpr, bool) {
 		return call, true
 	}
 	return nil, false
+}
+
+func lintErrorComparisons(fset *token.FileSet, info types.Info) []Lint {
+	lints := []Lint{}
+
+	for expr := range info.Types {
+		// Find == and != operations.
+		binExpr, ok := expr.(*ast.BinaryExpr)
+		if !ok {
+			continue
+		}
+		if binExpr.Op != token.EQL && binExpr.Op != token.NEQ {
+			continue
+		}
+		// Comparing errors with nil is okay.
+		if isNilComparison(binExpr) {
+			continue
+		}
+		// Find comparisons of which one side is a of type error.
+		if !isErrorComparison(info, binExpr) {
+			continue
+		}
+
+		lints = append(lints, Lint{
+			Message: fmt.Sprintf("comparing with %s will fail on wrapped errors. Use errors.Is to check for a specific error", binExpr.Op),
+			Pos:     fset.Position(binExpr.Pos()),
+		})
+	}
+
+	for scope := range info.Scopes {
+		// Find value switch blocks.
+		switchStmt, ok := scope.(*ast.SwitchStmt)
+		if !ok {
+			continue
+		}
+		// Check whether the switch operates on an error type.
+		if switchStmt.Tag == nil {
+			continue
+		}
+		tagType := info.Types[switchStmt.Tag]
+		if tagType.Type.String() != "error" {
+			continue
+		}
+
+		lints = append(lints, Lint{
+			Message: "switch on an error will fail on wrapped errors. Use errors.Is to check for specific errors",
+			Pos:     fset.Position(switchStmt.Pos()),
+		})
+	}
+
+	return lints
+}
+
+func isNilComparison(binExpr *ast.BinaryExpr) bool {
+	if ident, ok := binExpr.X.(*ast.Ident); ok && ident.Name == "nil" {
+		return true
+	}
+	if ident, ok := binExpr.Y.(*ast.Ident); ok && ident.Name == "nil" {
+		return true
+	}
+	return false
+}
+
+func isErrorComparison(info types.Info, binExpr *ast.BinaryExpr) bool {
+	tx := info.Types[binExpr.X]
+	ty := info.Types[binExpr.Y]
+	return tx.Type.String() == "error" || ty.Type.String() == "error"
 }
