@@ -10,6 +10,13 @@ information about the error's cause.
 
 For details on Go error wrapping, see: https://golang.org/pkg/errors/
 
+## Usage
+go-errorlint accepts a set of package names similar to golint:
+```
+go-errorlint ./...
+```
+If there are one or more results, the exit status is set to `1`.
+
 
 ## Examples
 
