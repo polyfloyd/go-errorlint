@@ -10,6 +10,7 @@ information about the error's cause.
 
 For details on Go error wrapping, see: https://golang.org/pkg/errors/
 
+
 ## Usage
 go-errorlint accepts a set of package names similar to golint:
 ```
@@ -17,10 +18,16 @@ go-errorlint ./...
 ```
 If there are one or more results, the exit status is set to `1`.
 
+**Caveats**:
+* When using the `-errorf` lint, keep in mind that any errors wrapped by
+  `fmt.Errorf` implicitly become part of your API as according to [Hyrum's
+  Law](https://github.com/dwmkerr/hacker-laws#hyrums-law-the-law-of-implicit-interfaces).
+
 
 ## Examples
 
 ### fmt.Errorf wrapping verb
+This lint must be enabled with the `-errorf` flag.
 ```go
 // bad
 fmt.Errorf("oh noes: %v", err)

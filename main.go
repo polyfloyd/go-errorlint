@@ -10,6 +10,7 @@ import (
 )
 
 func main() {
+	checkErrorf := flag.Bool("errorf", false, "Check whether fmt.Errorf uses the %w verb for formatting errors. See the readme for caveats")
 	flag.Parse()
 
 	cfg := &packages.Config{
@@ -26,9 +27,11 @@ func main() {
 
 	lints := []Lint{}
 	for _, pkg := range pkgs {
-		l := lintFmtErrorfCalls(pkg.Fset, *pkg.TypesInfo)
-		lints = append(lints, l...)
-		l = lintErrorComparisons(pkg.Fset, *pkg.TypesInfo)
+		if *checkErrorf {
+			l := lintFmtErrorfCalls(pkg.Fset, *pkg.TypesInfo)
+			lints = append(lints, l...)
+		}
+		l := lintErrorComparisons(pkg.Fset, *pkg.TypesInfo)
 		lints = append(lints, l...)
 		l = lintErrorTypeAssertions(pkg.Fset, *pkg.TypesInfo)
 		lints = append(lints, l...)
