@@ -17,7 +17,7 @@ func doAnotherThing() error {
 
 func TypeCheckGood() {
 	err := doAnotherThing()
-	var me MyError
+	var me *MyError
 	if errors.As(err, &me) {
 		fmt.Println("MyError")
 	}
