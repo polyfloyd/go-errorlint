@@ -1,4 +1,4 @@
-package main
+package errorlint
 
 import (
 	"sort"
@@ -17,7 +17,7 @@ func TestLintFmtErrorfCalls(t *testing.T) {
 	}
 
 	pkg := pkgs[0]
-	lints := lintFmtErrorfCalls(pkg.Fset, *pkg.TypesInfo)
+	lints := LintFmtErrorfCalls(pkg.Fset, *pkg.TypesInfo)
 	sort.Sort(ByPosition(lints))
 
 	expectPositions := []struct {
@@ -50,7 +50,7 @@ func TestLintErrorComparisons(t *testing.T) {
 	}
 
 	pkg := pkgs[0]
-	lints := lintErrorComparisons(pkg.Fset, *pkg.TypesInfo)
+	lints := LintErrorComparisons(pkg.Fset, *pkg.TypesInfo)
 	sort.Sort(ByPosition(lints))
 
 	expectPositions := []struct {
@@ -85,7 +85,7 @@ func TestLintErrorTypeAssertions(t *testing.T) {
 	}
 
 	pkg := pkgs[0]
-	lints := lintErrorTypeAssertions(pkg.Fset, *pkg.TypesInfo)
+	lints := LintErrorTypeAssertions(pkg.Fset, *pkg.TypesInfo)
 	sort.Sort(ByPosition(lints))
 
 	expectPositions := []struct {

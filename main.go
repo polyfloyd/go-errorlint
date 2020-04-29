@@ -7,6 +7,8 @@ import (
 	"sort"
 
 	"golang.org/x/tools/go/packages"
+
+	"github.com/polyfloyd/go-errorlint/errorlint"
 )
 
 func main() {
@@ -25,18 +27,18 @@ func main() {
 		os.Exit(100)
 	}
 
-	lints := []Lint{}
+	lints := []errorlint.Lint{}
 	for _, pkg := range pkgs {
 		if *checkErrorf {
-			l := lintFmtErrorfCalls(pkg.Fset, *pkg.TypesInfo)
+			l := errorlint.LintFmtErrorfCalls(pkg.Fset, *pkg.TypesInfo)
 			lints = append(lints, l...)
 		}
-		l := lintErrorComparisons(pkg.Fset, *pkg.TypesInfo)
+		l := errorlint.LintErrorComparisons(pkg.Fset, *pkg.TypesInfo)
 		lints = append(lints, l...)
-		l = lintErrorTypeAssertions(pkg.Fset, *pkg.TypesInfo)
+		l = errorlint.LintErrorTypeAssertions(pkg.Fset, *pkg.TypesInfo)
 		lints = append(lints, l...)
 	}
-	sort.Sort(ByPosition(lints))
+	sort.Sort(errorlint.ByPosition(lints))
 
 	for _, lint := range lints {
 		fmt.Fprintf(os.Stderr, "%s: %s\n", lint.Pos, lint.Message)

@@ -1,4 +1,4 @@
-package main
+package errorlint
 
 import (
 	"fmt"
@@ -27,7 +27,7 @@ func (l ByPosition) Less(i, j int) bool {
 	return a.Filename < b.Filename
 }
 
-func lintFmtErrorfCalls(fset *token.FileSet, info types.Info) []Lint {
+func LintFmtErrorfCalls(fset *token.FileSet, info types.Info) []Lint {
 	lints := []Lint{}
 	for expr, t := range info.Types {
 		// Search for error expressions that are the result of fmt.Errorf
@@ -98,7 +98,7 @@ func isFmtErrorfCallExpr(info types.Info, expr ast.Expr) (*ast.CallExpr, bool) {
 	return nil, false
 }
 
-func lintErrorComparisons(fset *token.FileSet, info types.Info) []Lint {
+func LintErrorComparisons(fset *token.FileSet, info types.Info) []Lint {
 	lints := []Lint{}
 
 	for expr := range info.Types {
@@ -165,7 +165,7 @@ func isErrorComparison(info types.Info, binExpr *ast.BinaryExpr) bool {
 	return tx.Type.String() == "error" || ty.Type.String() == "error"
 }
 
-func lintErrorTypeAssertions(fset *token.FileSet, info types.Info) []Lint {
+func LintErrorTypeAssertions(fset *token.FileSet, info types.Info) []Lint {
 	lints := []Lint{}
 
 	for expr := range info.Types {
