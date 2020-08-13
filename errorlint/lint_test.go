@@ -11,7 +11,7 @@ func TestLintFmtErrorfCalls(t *testing.T) {
 	cfg := &packages.Config{
 		Mode: packages.NeedTypes | packages.NeedTypesInfo,
 	}
-	pkgs, err := packages.Load(cfg, "./testdata/fmterrorf.go")
+	pkgs, err := packages.Load(cfg, "../testdata/fmterrorf.go")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -29,8 +29,8 @@ func TestLintFmtErrorfCalls(t *testing.T) {
 		{Line: 20, Column: 34},
 		{Line: 25, Column: 29}, // MixedGoodAndBad
 	}
-	for i, l := range lints {
-		exp := expectPositions[i]
+	for i, exp := range expectPositions {
+		l := lints[i]
 		if exp.Line != l.Pos.Line {
 			t.Errorf("Unexpected line at index %d: exp %v, got %v", i, exp.Line, l.Pos.Line)
 		}
@@ -44,7 +44,7 @@ func TestLintErrorComparisons(t *testing.T) {
 	cfg := &packages.Config{
 		Mode: packages.NeedTypes | packages.NeedTypesInfo,
 	}
-	pkgs, err := packages.Load(cfg, "./testdata/errorsis.go")
+	pkgs, err := packages.Load(cfg, "../testdata/errorsis.go")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -64,8 +64,8 @@ func TestLintErrorComparisons(t *testing.T) {
 		{Line: 79, Column: 2}, // CompareSwitch
 		{Line: 86, Column: 2}, // CompareSwitchInline
 	}
-	for i, l := range lints {
-		exp := expectPositions[i]
+	for i, exp := range expectPositions {
+		l := lints[i]
 		if exp.Line != l.Pos.Line {
 			t.Errorf("Unexpected line at index %d: exp %v, got %v", i, exp.Line, l.Pos.Line)
 		}
@@ -79,7 +79,7 @@ func TestLintErrorTypeAssertions(t *testing.T) {
 	cfg := &packages.Config{
 		Mode: packages.NeedTypes | packages.NeedTypesInfo,
 	}
-	pkgs, err := packages.Load(cfg, "./testdata/errorsas.go")
+	pkgs, err := packages.Load(cfg, "../testdata/errorsas.go")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -98,8 +98,8 @@ func TestLintErrorTypeAssertions(t *testing.T) {
 		{Line: 51, Column: 14}, // TypeSwitchAssign
 		{Line: 58, Column: 14}, // TypeSwitchAssignInline
 	}
-	for i, l := range lints {
-		exp := expectPositions[i]
+	for i, exp := range expectPositions {
+		l := lints[i]
 		if exp.Line != l.Pos.Line {
 			t.Errorf("Unexpected line at index %d: exp %v, got %v", i, exp.Line, l.Pos.Line)
 		}
