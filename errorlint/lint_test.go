@@ -25,9 +25,11 @@ func TestLintFmtErrorfCalls(t *testing.T) {
 		Column int
 	}{
 		{Line: 15, Column: 33}, // NonWrappingVerb
-		{Line: 20, Column: 29}, // DoubleNonWrappingVerb
-		{Line: 20, Column: 34},
+		{Line: 20, Column: 29}, // DoubleNonWrappingVerb 1
+		{Line: 20, Column: 34}, // DoubleNonWrappingVerb 2
 		{Line: 25, Column: 29}, // MixedGoodAndBad
+		{Line: 30, Column: 33}, // ErrorStringFormat
+		{Line: 35, Column: 33}, // ErrorStringFormatCustomError
 	}
 	for i, exp := range expectPositions {
 		l := lints[i]

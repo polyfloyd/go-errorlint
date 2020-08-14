@@ -48,9 +48,10 @@ func LintFmtErrorfCalls(fset *token.FileSet, info types.Info) []Lint {
 		// For all arguments that are errors, check whether the wrapping verb
 		// is used.
 		for i, arg := range call.Args[1:] {
-			if info.Types[arg].Type.String() != "error" {
+			if info.Types[arg].Type.String() != "error" && !isErrorStringCall(info, arg) {
 				continue
 			}
+
 			if len(formatVerbs) >= i && formatVerbs[i] != "%w" {
 				lints = append(lints, Lint{
 					Message: "non-wrapping format verb for fmt.Errorf. Use `%w` to format errors",
@@ -60,6 +61,20 @@ func LintFmtErrorfCalls(fset *token.FileSet, info types.Info) []Lint {
 		}
 	}
 	return lints
+}
+
+// isErrorStringCall tests whether the expression is a string expression that
+// is the result of an `(error).Error()` method call.
+func isErrorStringCall(info types.Info, expr ast.Expr) bool {
+	if info.Types[expr].Type.String() == "string" {
+		if call, ok := expr.(*ast.CallExpr); ok {
+			if callSel, ok := call.Fun.(*ast.SelectorExpr); ok {
+				fun := info.Uses[callSel.Sel].(*types.Func)
+				return fun.Type().String() == "func() string" && fun.Name() == "Error"
+			}
+		}
+	}
+	return false
 }
 
 func printfFormatStringVerbs(info types.Info, call *ast.CallExpr) ([]string, bool) {
