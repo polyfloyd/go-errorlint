@@ -1,4 +1,4 @@
-package testdata
+package errorsas
 
 import (
 	"errors"
@@ -25,7 +25,7 @@ func TypeCheckGood() {
 
 func TypeAssertion() {
 	err := doAnotherThing()
-	_, ok := err.(*MyError) // bad
+	_, ok := err.(*MyError) // want `type assertion on error will fail on wrapped errors. Use errors.As to check for specific errors`
 	if ok {
 		fmt.Println("MyError")
 	}
@@ -33,14 +33,14 @@ func TypeAssertion() {
 
 func TypeSwitch() {
 	err := doAnotherThing()
-	switch err.(type) { // bad
+	switch err.(type) { // want `type switch on error will fail on wrapped errors. Use errors.As to check for specific errors`
 	case *MyError:
 		fmt.Println("MyError")
 	}
 }
 
 func TypeSwitchInline() {
-	switch doAnotherThing().(type) { // bad
+	switch doAnotherThing().(type) { // want `type switch on error will fail on wrapped errors. Use errors.As to check for specific errors`
 	case *MyError:
 		fmt.Println("MyError")
 	}
@@ -48,14 +48,14 @@ func TypeSwitchInline() {
 
 func TypeSwitchAssign() {
 	err := doAnotherThing()
-	switch t := err.(type) { // bad
+	switch t := err.(type) { // want `type switch on error will fail on wrapped errors. Use errors.As to check for specific errors`
 	case *MyError:
 		fmt.Println("MyError", t)
 	}
 }
 
 func TypeSwitchAssignInline() {
-	switch t := doAnotherThing().(type) { // bad
+	switch t := doAnotherThing().(type) { // want `type switch on error will fail on wrapped errors. Use errors.As to check for specific errors`
 	case *MyError:
 		fmt.Println("MyError", t)
 	}
