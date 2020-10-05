@@ -1,9 +1,10 @@
 package errorlint
 
 import (
-	"golang.org/x/tools/go/analysis/analysistest"
 	"log"
 	"testing"
+
+	"golang.org/x/tools/go/analysis/analysistest"
 )
 
 func TestErrorsAs(t *testing.T) {

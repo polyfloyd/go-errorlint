@@ -2,8 +2,9 @@ package errorlint
 
 import (
 	"flag"
-	"golang.org/x/tools/go/analysis"
 	"sort"
+
+	"golang.org/x/tools/go/analysis"
 )
 
 func NewAnalyzer() *analysis.Analyzer {
