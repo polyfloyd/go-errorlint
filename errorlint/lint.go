@@ -11,7 +11,7 @@ import (
 
 type Lint struct {
 	Message string
-	Pos     token.Position
+	Pos     token.Pos
 }
 
 type ByPosition []Lint
@@ -20,11 +20,7 @@ func (l ByPosition) Len() int      { return len(l) }
 func (l ByPosition) Swap(i, j int) { l[i], l[j] = l[j], l[i] }
 
 func (l ByPosition) Less(i, j int) bool {
-	a, b := l[i].Pos, l[j].Pos
-	if a.Filename == b.Filename {
-		return a.Offset < b.Offset
-	}
-	return a.Filename < b.Filename
+	return l[i].Pos < l[j].Pos
 }
 
 func LintFmtErrorfCalls(fset *token.FileSet, info types.Info) []Lint {
@@ -55,7 +51,7 @@ func LintFmtErrorfCalls(fset *token.FileSet, info types.Info) []Lint {
 			if len(formatVerbs) >= i && formatVerbs[i] != "%w" {
 				lints = append(lints, Lint{
 					Message: "non-wrapping format verb for fmt.Errorf. Use `%w` to format errors",
-					Pos:     fset.Position(arg.Pos()),
+					Pos:     arg.Pos(),
 				})
 			}
 		}
@@ -136,7 +132,7 @@ func LintErrorComparisons(fset *token.FileSet, info types.Info) []Lint {
 
 		lints = append(lints, Lint{
 			Message: fmt.Sprintf("comparing with %s will fail on wrapped errors. Use errors.Is to check for a specific error", binExpr.Op),
-			Pos:     fset.Position(binExpr.Pos()),
+			Pos:     binExpr.Pos(),
 		})
 	}
 
@@ -157,7 +153,7 @@ func LintErrorComparisons(fset *token.FileSet, info types.Info) []Lint {
 
 		lints = append(lints, Lint{
 			Message: "switch on an error will fail on wrapped errors. Use errors.Is to check for specific errors",
-			Pos:     fset.Position(switchStmt.Pos()),
+			Pos:     switchStmt.Pos(),
 		})
 	}
 
@@ -197,7 +193,7 @@ func LintErrorTypeAssertions(fset *token.FileSet, info types.Info) []Lint {
 
 		lints = append(lints, Lint{
 			Message: "type assertion on error will fail on wrapped errors. Use errors.As to check for specific errors",
-			Pos:     fset.Position(typeAssert.Pos()),
+			Pos:     typeAssert.Pos(),
 		})
 	}
 
@@ -224,7 +220,7 @@ func LintErrorTypeAssertions(fset *token.FileSet, info types.Info) []Lint {
 
 		lints = append(lints, Lint{
 			Message: "type switch on error will fail on wrapped errors. Use errors.As to check for specific errors",
-			Pos:     fset.Position(typeAssert.Pos()),
+			Pos:     typeAssert.Pos(),
 		})
 	}
 

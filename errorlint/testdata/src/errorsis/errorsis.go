@@ -1,4 +1,4 @@
-package testdata
+package errorsis
 
 import (
 	"errors"
@@ -48,42 +48,42 @@ func CompareOperatorNotNilYodaGood() {
 
 func EqualOperator() {
 	err := doThing()
-	if err == ErrFoo { // bad
+	if err == ErrFoo { // want `comparing with == will fail on wrapped errors. Use errors.Is to check for a specific error`
 		fmt.Println("ErrFoo")
 	}
 }
 
 func NotEqualOperator() {
 	err := doThing()
-	if err != ErrFoo { // bad
+	if err != ErrFoo { // want `comparing with != will fail on wrapped errors. Use errors.Is to check for a specific error`
 		fmt.Println("not ErrFoo")
 	}
 }
 
 func EqualOperatorYoda() {
 	err := doThing()
-	if ErrFoo == err { // bad
+	if ErrFoo == err { // want `comparing with == will fail on wrapped errors. Use errors.Is to check for a specific error`
 		fmt.Println("ErrFoo")
 	}
 }
 
 func NotEqualOperatorYoda() {
 	err := doThing()
-	if ErrFoo != err { // bad
+	if ErrFoo != err { // want `comparing with != will fail on wrapped errors. Use errors.Is to check for a specific error`
 		fmt.Println("not ErrFoo")
 	}
 }
 
 func CompareSwitch() {
 	err := doThing()
-	switch err { // bad
+	switch err { // want `switch on an error will fail on wrapped errors. Use errors.Is to check for specific errors`
 	case ErrFoo:
 		fmt.Println("ErrFoo")
 	}
 }
 
 func CompareSwitchInline() {
-	switch doThing() { // bad
+	switch doThing() { // want `switch on an error will fail on wrapped errors. Use errors.Is to check for specific errors`
 	case ErrFoo:
 		fmt.Println("ErrFoo")
 	}
