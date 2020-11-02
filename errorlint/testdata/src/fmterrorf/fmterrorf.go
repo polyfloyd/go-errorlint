@@ -17,12 +17,13 @@ func NonWrappingVerb() error {
 
 func DoubleNonWrappingVerb() error {
 	err := errors.New("oops")
-	return fmt.Errorf("%v %v", err, err) // want "non-wrapping format verb for fmt.Errorf. Use `%w` to format errors" "non-wrapping format verb for fmt.Errorf. Use `%w` to format errors"
+	return fmt.Errorf("%v %v", err, err) // want "non-wrapping format verb for fmt.Errorf. Use `%w` to format errors"
 }
 
-func MixedGoodAndBad() error {
-	err := errors.New("oops")
-	return fmt.Errorf("%v %w", err, err) // want "non-wrapping format verb for fmt.Errorf. Use `%w` to format errors"
+func ErrorAtLeastOneWrap() error {
+	ErrFoo := errors.New("foo")
+	ErrBar := errors.New("bar")
+	return fmt.Errorf("%w, %v", ErrFoo, ErrBar)
 }
 
 func ErrorStringFormat() error {

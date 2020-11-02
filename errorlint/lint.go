@@ -41,11 +41,17 @@ func LintFmtErrorfCalls(fset *token.FileSet, info types.Info) []Lint {
 		if !ok {
 			continue
 		}
-		// For all arguments that are errors, check whether the wrapping verb
-		// is used.
+		// For any arguments that are errors, check whether the wrapping verb
+		// is used. Only one %w verb may be used in a single format string at a
+		// time, so we stop after finding a correct %w or the first erroneous
+		// verb.
 		for i, arg := range call.Args[1:] {
 			if info.Types[arg].Type.String() != "error" && !isErrorStringCall(info, arg) {
 				continue
+			}
+
+			if len(formatVerbs) >= i && formatVerbs[i] == "%w" {
+				break
 			}
 
 			if len(formatVerbs) >= i && formatVerbs[i] != "%w" {
@@ -53,6 +59,7 @@ func LintFmtErrorfCalls(fset *token.FileSet, info types.Info) []Lint {
 					Message: "non-wrapping format verb for fmt.Errorf. Use `%w` to format errors",
 					Pos:     arg.Pos(),
 				})
+				break
 			}
 		}
 	}
