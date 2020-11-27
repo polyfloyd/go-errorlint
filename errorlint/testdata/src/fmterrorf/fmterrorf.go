@@ -21,9 +21,10 @@ func DoubleNonWrappingVerb() error {
 }
 
 func ErrorAtLeastOneWrap() error {
-	ErrFoo := errors.New("foo")
-	ErrBar := errors.New("bar")
-	return fmt.Errorf("%w, %v", ErrFoo, ErrBar)
+	err1 := errors.New("oops1")
+	err2 := errors.New("oops2")
+	err3 := errors.New("oops3")
+	return fmt.Errorf("%v, %w, %v", err1, err2, err3)
 }
 
 func ErrorStringFormat() error {
