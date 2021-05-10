@@ -142,6 +142,10 @@ func LintErrorComparisons(fset *token.FileSet, info types.Info) []Lint {
 			continue
 		}
 
+		if isAllowedErrorComparison(info, binExpr) {
+			continue
+		}
+
 		lints = append(lints, Lint{
 			Message: fmt.Sprintf("comparing with %s will fail on wrapped errors. Use errors.Is to check for a specific error", binExpr.Op),
 			Pos:     binExpr.Pos(),

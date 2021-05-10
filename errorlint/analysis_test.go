@@ -23,3 +23,8 @@ func TestFmtErrorf(t *testing.T) {
 	}
 	analysistest.Run(t, analysistest.TestData(), analyzer, "fmterrorf")
 }
+
+func TestAllowedComparisons(t *testing.T) {
+	analyzer := NewAnalyzer()
+	analysistest.Run(t, analysistest.TestData(), analyzer, "allowed")
+}
