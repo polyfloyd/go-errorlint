@@ -17,6 +17,7 @@ var allowedErrors = []struct {
 	{err: "io.EOF", fun: "(*bufio.Reader).Read"},
 	{err: "io.EOF", fun: "(*bufio.Reader).ReadByte"},
 	{err: "io.EOF", fun: "(*bufio.Reader).ReadBytes"},
+	{err: "io.EOF", fun: "(*bufio.Reader).ReadLine"},
 	{err: "io.EOF", fun: "(*bufio.Reader).ReadSlice"},
 	{err: "io.EOF", fun: "(*bufio.Reader).ReadString"},
 	{err: "io.EOF", fun: "(*bufio.Scanner).Scan"},
