@@ -27,6 +27,11 @@ var allowedErrors = []struct {
 	{err: "io.EOF", fun: "(*bytes.Buffer).ReadBytes"},
 	{err: "io.EOF", fun: "(*bytes.Buffer).ReadRune"},
 	{err: "io.EOF", fun: "(*bytes.Buffer).ReadString"},
+	{err: "io.EOF", fun: "(*bytes.Reader).Read"},
+	{err: "io.EOF", fun: "(*bytes.Reader).ReadAt"},
+	{err: "io.EOF", fun: "(*bytes.Reader).ReadByte"},
+	{err: "io.EOF", fun: "(*bytes.Reader).ReadRune"},
+	{err: "io.EOF", fun: "(*bytes.Reader).ReadString"},
 	// pkg/database/sql
 	{err: "sql.ErrNoRows", fun: "(*database/sql.Row).Scan"},
 	// pkg/io

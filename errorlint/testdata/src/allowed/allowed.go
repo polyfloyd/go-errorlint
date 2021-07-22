@@ -1,6 +1,7 @@
 package testdata
 
 import (
+	"bytes"
 	"database/sql"
 	"fmt"
 	"io"
@@ -88,4 +89,18 @@ func SqlRowScan(db *sql.DB) {
 	if err == sql.ErrNoRows {
 		fmt.Println("no rows!")
 	}
+}
+
+// https://github.com/polyfloyd/go-errorlint/issues/13
+type CompressedFile struct {
+	reader  *bytes.Reader
+	zipPath string
+}
+
+func (c CompressedFile) Read(p []byte) (int, error) {
+	n, err := c.reader.Read(p)
+	if err == io.EOF {
+		return n, io.EOF
+	}
+	return n, fmt.Errorf("can't read from reader")
 }
