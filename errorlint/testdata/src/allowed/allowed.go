@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 )
 
@@ -103,4 +104,32 @@ func (c CompressedFile) Read(p []byte) (int, error) {
 		return n, io.EOF
 	}
 	return n, fmt.Errorf("can't read from reader")
+}
+
+func HTTPErrServerClosed(s *http.Server) error {
+	if err := s.Serve(nil); err != http.ErrServerClosed {
+		return err
+	}
+	if err := s.ServeTLS(nil, "", ""); err != http.ErrServerClosed {
+		return err
+	}
+	if err := s.ListenAndServe(); err != http.ErrServerClosed {
+		return err
+	}
+	if err := s.ListenAndServeTLS("", ""); err != http.ErrServerClosed {
+		return err
+	}
+	if err := http.Serve(nil, nil); err != http.ErrServerClosed {
+		return err
+	}
+	if err := http.ServeTLS(nil, nil, "", ""); err != http.ErrServerClosed {
+		return err
+	}
+	if err := http.ListenAndServe("", nil); err != http.ErrServerClosed {
+		return err
+	}
+	if err := http.ListenAndServeTLS("", "", "", nil); err != http.ErrServerClosed {
+		return err
+	}
+	return nil
 }
