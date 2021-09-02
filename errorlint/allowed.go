@@ -40,6 +40,15 @@ var allowedErrors = []struct {
 	{err: "io.ErrShortBuffer", fun: "io.ReadAtLeast"},
 	{err: "io.ErrUnexpectedEOF", fun: "io.ReadAtLeast"},
 	{err: "io.ErrUnexpectedEOF", fun: "io.ReadFull"},
+	// pkg/net/http
+	{err: "http.ErrServerClosed", fun: "(*net/http.Server).ListenAndServe"},
+	{err: "http.ErrServerClosed", fun: "(*net/http.Server).ListenAndServeTLS"},
+	{err: "http.ErrServerClosed", fun: "(*net/http.Server).Serve"},
+	{err: "http.ErrServerClosed", fun: "(*net/http.Server).ServeTLS"},
+	{err: "http.ErrServerClosed", fun: "http.ListenAndServe"},
+	{err: "http.ErrServerClosed", fun: "http.ListenAndServeTLS"},
+	{err: "http.ErrServerClosed", fun: "http.Serve"},
+	{err: "http.ErrServerClosed", fun: "http.ServeTLS"},
 	// pkg/os
 	{err: "io.EOF", fun: "(*os.File).Read"},
 	{err: "io.EOF", fun: "(*os.File).ReadAt"},
