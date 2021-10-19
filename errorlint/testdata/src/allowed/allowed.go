@@ -3,6 +3,7 @@ package testdata
 import (
 	"bytes"
 	"database/sql"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -30,6 +31,29 @@ func CompareAssignIndirect(r io.Reader) {
 	if err3 == io.EOF {
 		fmt.Println(err3)
 	}
+}
+
+func CompareAssignMultiple(a, b io.Reader) error {
+	var err error
+	var buf []byte
+	_, err = a.Read(buf)
+	_, err = b.Read(buf)
+	if err == io.EOF {
+		return io.EOF
+	}
+	return fmt.Errorf("can't read from reader")
+}
+
+func CompareAssignMultipleWithUnsafe(a, b io.Reader) error {
+	var err error
+	var buf []byte
+	_, err = a.Read(buf)
+	_, err = b.Read(buf)
+	err = errors.New("asdf")
+	if err == io.EOF { // want `comparing with == will fail on wrapped errors. Use errors.Is to check for a specific error`
+		return io.EOF
+	}
+	return fmt.Errorf("can't read from reader")
 }
 
 func CompareInline(db *sql.DB) {
