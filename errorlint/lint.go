@@ -121,7 +121,7 @@ func isFmtErrorfCallExpr(info types.Info, expr ast.Expr) (*ast.CallExpr, bool) {
 	return nil, false
 }
 
-func LintErrorComparisons(fset *token.FileSet, info types.Info) []Lint {
+func LintErrorComparisons(fset *token.FileSet, info *TypesInfoExt) []Lint {
 	lints := []Lint{}
 
 	for expr := range info.Types {
@@ -138,7 +138,7 @@ func LintErrorComparisons(fset *token.FileSet, info types.Info) []Lint {
 			continue
 		}
 		// Find comparisons of which one side is a of type error.
-		if !isErrorComparison(info, binExpr) {
+		if !isErrorComparison(info.Info, binExpr) {
 			continue
 		}
 

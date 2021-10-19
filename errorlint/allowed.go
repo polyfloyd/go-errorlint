@@ -3,7 +3,6 @@ package errorlint
 import (
 	"fmt"
 	"go/ast"
-	"go/types"
 )
 
 var allowedErrors = []struct {
@@ -71,7 +70,7 @@ func isAllowedErrAndFunc(err, fun string) bool {
 	return false
 }
 
-func isAllowedErrorComparison(info types.Info, binExpr *ast.BinaryExpr) bool {
+func isAllowedErrorComparison(info *TypesInfoExt, binExpr *ast.BinaryExpr) bool {
 	var errName string // `<package>.<name>`, e.g. `io.EOF`
 	var callExprs []*ast.CallExpr
 
@@ -125,91 +124,26 @@ func isAllowedErrorComparison(info types.Info, binExpr *ast.BinaryExpr) bool {
 
 // assigningCallExprs finds all *ast.CallExpr nodes that are part of an
 // *ast.AssignStmt that assign to the subject identifier.
-func assigningCallExprs(info types.Info, subject *ast.Ident) []*ast.CallExpr {
+func assigningCallExprs(info *TypesInfoExt, subject *ast.Ident) []*ast.CallExpr {
 	if subject.Obj == nil {
 		return nil
 	}
 
-	// - Find object from identifier
-	// - Find other identifiers that reference the object
-	// - Walk through identifier parents to find assignments
-	// - Find call expressions for assignments
-
-	// Find the object that the identifier points to. We need this to find
-	// identifiers that reference it.
-	sobj := info.ObjectOf(subject)
-
 	// Find other identifiers that reference this same object. Make sure to
 	// exclude the subject identifier as it will cause an infinite recursion
 	// and is being used in a read operation anyway.
+	sobj := info.ObjectOf(subject)
 	identifiers := []*ast.Ident{}
-	for node, obj := range info.Uses {
-		if obj == sobj && subject.Pos() != node.Pos() {
-			identifiers = append(identifiers, node)
-		}
-	}
-	for node, obj := range info.Defs {
-		if obj == sobj && subject.Pos() != node.Pos() {
-			identifiers = append(identifiers, node)
+	for _, ident := range info.IdentifiersForObject[sobj] {
+		if subject.Pos() != ident.Pos() {
+			identifiers = append(identifiers, ident)
 		}
 	}
 
-	// Find the scope in which the subject is declared. We need this to search
-	// for parent nodes.
-	var scopeNode ast.Node
-	for node, scope := range info.Scopes {
-		if scope == sobj.Parent() {
-			scopeNode = node
-			break
-		}
-	}
-	if scopeNode == nil {
-		return nil // TODO: When does this happen?
-	}
-
-	// Function scopes are mapped to only the function type, which does not
-	// contain the function body needed for finding identifier parent nodes.
-	// If any, remap the function type to its body.
-	if funcType, ok := scopeNode.(*ast.FuncType); ok {
-	outer:
-		for node := range info.Scopes {
-			if file, ok := node.(*ast.File); ok {
-				for _, decl := range file.Decls {
-					if funcDecl, ok := decl.(*ast.FuncDecl); ok {
-						if funcDecl.Type == funcType {
-							scopeNode = funcDecl
-							break outer
-						}
-					}
-				}
-			}
-		}
-	}
-
-	// Find the identifiers in the scope, but record their parent nodes. It's
-	// too bad there is no parent node mapping in go/ast itself, so we have to
-	// inspect and use a stack.
-	parentNodes := map[*ast.Ident]ast.Node{}
-	stack := []ast.Node{scopeNode}
-	ast.Inspect(scopeNode, func(n ast.Node) bool {
-		for _, ident := range identifiers {
-			if n == ident {
-				parentNodes[ident] = stack[len(stack)-1]
-				break
-			}
-		}
-
-		if n == nil {
-			stack = stack[:len(stack)-1]
-		} else {
-			stack = append(stack, n)
-		}
-		return true
-	})
-
-	// Find call expressions for assignments.
+	// Find out whether the identifiers are part of an assignment statement.
 	var callExprs []*ast.CallExpr
-	for _, parent := range parentNodes {
+	for _, ident := range identifiers {
+		parent := info.NodeParent[ident]
 		switch declT := parent.(type) {
 		case *ast.AssignStmt:
 			// The identifier is LHS of an assignment.
