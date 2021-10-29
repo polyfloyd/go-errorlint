@@ -13,6 +13,8 @@ var allowedErrors = []struct {
 	{err: "io.EOF", fun: "(*tar.Reader).Next"},
 	{err: "io.EOF", fun: "(*tar.Reader).Read"},
 	// pkg/bufio
+	{err: "io.EOF", fun: "(*bufio.Reader).Discard"},
+	{err: "io.EOF", fun: "(*bufio.Reader).Peek"},
 	{err: "io.EOF", fun: "(*bufio.Reader).Read"},
 	{err: "io.EOF", fun: "(*bufio.Reader).ReadByte"},
 	{err: "io.EOF", fun: "(*bufio.Reader).ReadBytes"},
