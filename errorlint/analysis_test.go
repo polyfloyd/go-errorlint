@@ -28,3 +28,8 @@ func TestAllowedComparisons(t *testing.T) {
 	analyzer := NewAnalyzer()
 	analysistest.Run(t, analysistest.TestData(), analyzer, "allowed")
 }
+
+func TestIssueRegressions(t *testing.T) {
+	analyzer := NewAnalyzer()
+	analysistest.Run(t, analysistest.TestData(), analyzer, "issues")
+}
