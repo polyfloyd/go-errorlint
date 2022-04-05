@@ -98,8 +98,6 @@ func printfFormatStringVerbs(info types.Info, call *ast.CallExpr) ([]string, boo
 	}
 	formatString := constant.StringVal(info.Types[strLit].Value)
 
-	fmt.Println()
-	fmt.Println(formatString)
 	pp := printfParser{str: formatString}
 	verbs, err := pp.ParseAllVerbs()
 	if err != nil {
