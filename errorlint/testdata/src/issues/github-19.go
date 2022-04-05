@@ -1,4 +1,4 @@
-package testdata
+package issues
 
 // Regression test for: https://github.com/polyfloyd/go-errorlint/issues/19
 

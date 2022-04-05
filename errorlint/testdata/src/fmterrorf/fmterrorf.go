@@ -54,3 +54,13 @@ type MyError struct{}
 func (MyError) Error() string {
 	return "oops"
 }
+
+func ErrorIndexReset() error {
+	err := errors.New("oops1")
+	return fmt.Errorf("%[1]v %d %f %[1]v, %d, %f", err, 1, 2.2) // want "non-wrapping format verb for fmt.Errorf. Use `%w` to format errors"
+}
+
+func ErrorIndexResetGood() error {
+	err := errors.New("oops1")
+	return fmt.Errorf("%[1]w %d %f %[1]v, %d, %f", err, 1, 2.2)
+}
