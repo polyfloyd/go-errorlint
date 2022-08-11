@@ -59,6 +59,7 @@ func (pp *printfParser) parseVerb() (*verb, error) {
 		return pp.parseVerb()
 	case '+', '#':
 		pp.next()
+		fallthrough
 	case '[':
 		var err error
 		index, err = pp.parseIndex()
