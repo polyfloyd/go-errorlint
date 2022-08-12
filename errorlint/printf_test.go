@@ -49,6 +49,13 @@ func TestPrintfParser(t *testing.T) {
 				{format: "v", index: 1},
 			},
 		},
+		{
+			format: "%#v %+v",
+			verbs: []verb{
+				{format: "v", index: -1},
+				{format: "v", index: -1},
+			},
+		},
 	}
 
 	for _, tc := range testCases {
