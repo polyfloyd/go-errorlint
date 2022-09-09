@@ -156,8 +156,12 @@ func LintErrorComparisons(fset *token.FileSet, info *TypesInfoExt) []Lint {
 		if !isErrorComparison(info.Info, binExpr) {
 			continue
 		}
-
+		// Some errors that are returned from some functions are exempt.
 		if isAllowedErrorComparison(info, binExpr) {
+			continue
+		}
+		// Comparisons that happen in `func (type) Is(error) bool` are okay.
+		if isNodeInErrorIsFunc(info, binExpr) {
 			continue
 		}
 
@@ -179,6 +183,9 @@ func LintErrorComparisons(fset *token.FileSet, info *TypesInfoExt) []Lint {
 		}
 		tagType := info.Types[switchStmt.Tag]
 		if tagType.Type.String() != "error" {
+			continue
+		}
+		if isNodeInErrorIsFunc(info, switchStmt) {
 			continue
 		}
 
@@ -205,6 +212,30 @@ func isErrorComparison(info types.Info, binExpr *ast.BinaryExpr) bool {
 	tx := info.Types[binExpr.X]
 	ty := info.Types[binExpr.Y]
 	return tx.Type.String() == "error" || ty.Type.String() == "error"
+}
+
+func isNodeInErrorIsFunc(info *TypesInfoExt, node ast.Node) bool {
+	funcDecl := info.ContainingFuncDecl(node)
+	if funcDecl == nil {
+		return false
+	}
+
+	if funcDecl.Name.Name != "Is" {
+		return false
+	}
+	if funcDecl.Recv == nil {
+		return false
+	}
+	// There should be 1 argument of type error.
+	if ii := funcDecl.Type.Params.List; len(ii) != 1 || info.Types[ii[0].Type].Type.String() != "error" {
+		return false
+	}
+	// The return type should be bool.
+	if ii := funcDecl.Type.Results.List; len(ii) != 1 || info.Types[ii[0].Type].Type.String() != "bool" {
+		return false
+	}
+
+	return true
 }
 
 func LintErrorTypeAssertions(fset *token.FileSet, info types.Info) []Lint {
