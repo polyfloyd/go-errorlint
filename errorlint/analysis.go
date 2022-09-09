@@ -105,7 +105,6 @@ func (info *TypesInfoExt) ContainingFuncDecl(node ast.Node) *ast.FuncDecl {
 		}
 		if fun, ok := parent.(*ast.FuncDecl); ok {
 			return fun
-			break
 		}
 	}
 	return nil
