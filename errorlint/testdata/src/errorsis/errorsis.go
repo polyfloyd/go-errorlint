@@ -82,6 +82,16 @@ func CompareSwitch() {
 	}
 }
 
+func CompareSwitchNilDefault() {
+	err := doThing()
+	switch err {
+	case nil:
+		fmt.Println("success")
+	default:
+		fmt.Println("failure")
+	}
+}
+
 func CompareSwitchInline() {
 	switch doThing() { // want `switch on an error will fail on wrapped errors. Use errors.Is to check for specific errors`
 	case ErrFoo:
