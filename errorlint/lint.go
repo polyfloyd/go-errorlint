@@ -189,6 +189,27 @@ func LintErrorComparisons(fset *token.FileSet, info *TypesInfoExt) []Lint {
 			continue
 		}
 
+		hasErrorCase := false
+		for _, caseBlock := range switchStmt.Body.List {
+			caseClause, ok := caseBlock.(*ast.CaseClause)
+			if !ok {
+				continue
+			}
+			for _, clause := range caseClause.List {
+				switch clause := clause.(type) {
+				case nil:
+					continue // default label is safe
+				case *ast.Ident:
+					if clause.Name != "nil" {
+						hasErrorCase = true
+					}
+				}
+			}
+		}
+		if !hasErrorCase {
+			continue
+		}
+
 		lints = append(lints, Lint{
 			Message: "switch on an error will fail on wrapped errors. Use errors.Is to check for specific errors",
 			Pos:     switchStmt.Pos(),
