@@ -189,31 +189,13 @@ func LintErrorComparisons(fset *token.FileSet, info *TypesInfoExt) []Lint {
 			continue
 		}
 
-		hasErrorCase := false
-		for _, caseBlock := range switchStmt.Body.List {
-			caseClause, ok := caseBlock.(*ast.CaseClause)
-			if !ok {
-				continue
-			}
-			for _, clause := range caseClause.List {
-				switch clause := clause.(type) {
-				case nil:
-					continue // default label is safe
-				case *ast.Ident:
-					if clause.Name != "nil" {
-						hasErrorCase = true
-					}
-				}
-			}
-		}
-		if !hasErrorCase {
-			continue
+		if switchComparesNonNil(switchStmt) {
+			lints = append(lints, Lint{
+				Message: "switch on an error will fail on wrapped errors. Use errors.Is to check for specific errors",
+				Pos:     switchStmt.Pos(),
+			})
 		}
 
-		lints = append(lints, Lint{
-			Message: "switch on an error will fail on wrapped errors. Use errors.Is to check for specific errors",
-			Pos:     switchStmt.Pos(),
-		})
 	}
 
 	return lints
@@ -257,6 +239,31 @@ func isNodeInErrorIsFunc(info *TypesInfoExt, node ast.Node) bool {
 	}
 
 	return true
+}
+
+// switchComparesNonNil returns true if one of its clauses compares by value.
+func switchComparesNonNil(switchStmt *ast.SwitchStmt) bool {
+	for _, caseBlock := range switchStmt.Body.List {
+		caseClause, ok := caseBlock.(*ast.CaseClause)
+		if !ok {
+			continue
+		}
+		for _, clause := range caseClause.List {
+			switch clause := clause.(type) {
+			case nil:
+				// default label is safe
+				continue
+			case *ast.Ident:
+				// `case nil` is safe
+				if clause.Name == "nil" {
+					continue
+				}
+			}
+			// anything else (including an Ident other than nil) isn't safe
+			return true
+		}
+	}
+	return false
 }
 
 func LintErrorTypeAssertions(fset *token.FileSet, info types.Info) []Lint {
