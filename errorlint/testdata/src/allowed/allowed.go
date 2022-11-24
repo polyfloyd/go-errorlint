@@ -102,6 +102,9 @@ func IoReadAtLeast(r io.Reader) {
 func IoReadFull(r io.Reader) {
 	var buf [4096]byte
 	_, err := io.ReadFull(r, buf[:])
+	if err == io.EOF {
+		fmt.Println(err)
+	}
 	if err == io.ErrUnexpectedEOF {
 		fmt.Println(err)
 	}
