@@ -7,6 +7,7 @@ on:
   pull_request:
     branches:
       - main
+  workflow_call:
 
 
 jobs:
@@ -25,3 +26,14 @@ jobs:
       run: go build -v
     - name: go test
       run: go test -test.v -race -cover
+
+  conventional-commits:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+    - run: pip3 install -U Commitizen
+      # The commit hash here is that of the commit where we started using conventional commits.
+    - run: cz check --rev-range deebab92..HEAD
