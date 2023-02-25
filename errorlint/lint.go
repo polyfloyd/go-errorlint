@@ -22,7 +22,7 @@ func (l ByPosition) Less(i, j int) bool {
 	return l[i].Pos < l[j].Pos
 }
 
-func LintFmtErrorfCalls(fset *token.FileSet, info types.Info) []Lint {
+func LintFmtErrorfCalls(fset *token.FileSet, info types.Info, multipleWraps bool) []Lint {
 	lints := []Lint{}
 	for expr, t := range info.Types {
 		// Search for error expressions that are the result of fmt.Errorf
@@ -42,29 +42,37 @@ func LintFmtErrorfCalls(fset *token.FileSet, info types.Info) []Lint {
 		}
 
 		// For any arguments that are errors, check whether the wrapping verb is used. %w may occur
-		// for multiple errors in one Errorf invocation. We raise an issue if at least one error
-		// does not have a corresponding wrapping verb.
-		var lintArg ast.Expr
+		// for multiple errors in one Errorf invocation, unless multipleWraps is true. We raise an
+		// issue if at least one error does not have a corresponding wrapping verb.
 		args := call.Args[1:]
+		wrapCount := 0
 		for i := 0; i < len(args) && i < len(formatVerbs); i++ {
 			if !implementsError(info.Types[args[i]].Type) && !isErrorStringCall(info, args[i]) {
 				continue
 			}
+			verb := formatVerbs[i]
 
-			if formatVerbs[i] == "w" {
-				continue
+			if verb == "w" {
+				wrapCount++
+				if multipleWraps {
+					continue
+				}
+				if wrapCount > 1 {
+					lints = append(lints, Lint{
+						Message: "only one %w verb is permitted per format string",
+						Pos:     args[i].Pos(),
+					})
+					break
+				}
 			}
 
-			if lintArg == nil {
-				lintArg = args[i]
+			if multipleWraps && wrapCount == 0 {
+				lints = append(lints, Lint{
+					Message: "non-wrapping format verb for fmt.Errorf. Use `%w` to format errors",
+					Pos:     args[i].Pos(),
+				})
 				break
 			}
-		}
-		if lintArg != nil {
-			lints = append(lints, Lint{
-				Message: "non-wrapping format verb for fmt.Errorf. Use `%w` to format errors",
-				Pos:     lintArg.Pos(),
-			})
 		}
 	}
 	return lints

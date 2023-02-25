@@ -17,11 +17,21 @@ func TestErrorsIs(t *testing.T) {
 
 func TestFmtErrorf(t *testing.T) {
 	analyzer := NewAnalyzer()
-	err := analyzer.Flags.Set("errorf", "true")
-	if err != nil {
+	if err := analyzer.Flags.Set("errorf", "true"); err != nil {
 		log.Fatal(err)
 	}
 	analysistest.Run(t, analysistest.TestData(), analyzer, "fmterrorf")
+}
+
+func TestFmtErrorfMultiple(t *testing.T) {
+	analyzer := NewAnalyzer()
+	if err := analyzer.Flags.Set("errorf", "true"); err != nil {
+		log.Fatal(err)
+	}
+	if err := analyzer.Flags.Set("errorf-multi", "false"); err != nil {
+		log.Fatal(err)
+	}
+	analysistest.Run(t, analysistest.TestData(), analyzer, "fmterrorf-go1.19")
 }
 
 func TestAllowedComparisons(t *testing.T) {
