@@ -1,3 +1,9 @@
+## v1.2.0 (2023-02-25)
+
+### Feat
+
+- Add the -errorf-multi flag
+
 ## v1.1.0 (2023-02-10)
 
 ### Feat
