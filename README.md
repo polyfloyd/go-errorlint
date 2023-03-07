@@ -34,10 +34,16 @@ fmt.Errorf("oh noes: %v", err)
 fmt.Errorf("oh noes: %w", err)
 ```
 
+You can pass `-fix` to have go-errorlint automatically fix these issues for you.
+
 **Caveats**:
 * When using the `-errorf` lint, keep in mind that any errors wrapped by
   `fmt.Errorf` implicitly become part of your API as according to [Hyrum's
   Law](https://github.com/dwmkerr/hacker-laws#hyrums-law-the-law-of-implicit-interfaces).
+* This linter will flag all instances of a non-wrapped in a single `fmt.Errorf` call which will
+  break on Go 1.19 and earlier. Pass `-errorf-multi=0` to retain backwards compatibility. This
+  functionality will be passively maintained until at least Go 1.19 has been dropped from official
+  support.
 
 ### Comparisons of errors
 This lint is enabled by default. Use the `-comparison` flag to toggle.
