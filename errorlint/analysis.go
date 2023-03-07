@@ -34,7 +34,7 @@ func init() {
 }
 
 func run(pass *analysis.Pass) (interface{}, error) {
-	lints := []Lint{}
+	lints := []analysis.Diagnostic{}
 	extInfo := newTypesInfoExt(pass.TypesInfo)
 	if checkComparison {
 		l := LintErrorComparisons(pass.Fset, extInfo)
@@ -51,7 +51,7 @@ func run(pass *analysis.Pass) (interface{}, error) {
 	sort.Sort(ByPosition(lints))
 
 	for _, l := range lints {
-		pass.Report(analysis.Diagnostic{Pos: l.Pos, Message: l.Message})
+		pass.Report(l)
 	}
 	return nil, nil
 }

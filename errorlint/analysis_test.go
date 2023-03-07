@@ -20,7 +20,7 @@ func TestFmtErrorf(t *testing.T) {
 	if err := analyzer.Flags.Set("errorf", "true"); err != nil {
 		log.Fatal(err)
 	}
-	analysistest.Run(t, analysistest.TestData(), analyzer, "fmterrorf")
+	analysistest.RunWithSuggestedFixes(t, analysistest.TestData(), analyzer, "fmterrorf")
 }
 
 func TestFmtErrorfMultiple(t *testing.T) {
