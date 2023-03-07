@@ -1,3 +1,10 @@
+## v1.3.0 (2023-03-07)
+
+### Feat
+
+- Suggest fixes for missing wrap verbs
+- Stop linting arguments that are .Error() expressions
+
 ## v1.2.0 (2023-02-25)
 
 ### Feat
