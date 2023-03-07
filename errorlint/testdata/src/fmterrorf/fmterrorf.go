@@ -43,12 +43,12 @@ func ErrorMultipleWrapsWithCustomError() error {
 
 func ErrorStringFormat() error {
 	err := errors.New("oops")
-	return fmt.Errorf("error: %s", err.Error()) // want "non-wrapping format verb for fmt.Errorf. Use `%w` to format errors"
+	return fmt.Errorf("error: %s", err.Error())
 }
 
 func ErrorStringFormatCustomError() error {
 	err := MyError{}
-	return fmt.Errorf("error: %s", err.Error()) // want "non-wrapping format verb for fmt.Errorf. Use `%w` to format errors"
+	return fmt.Errorf("error: %s", err.Error())
 }
 
 func NotAnError() error {

@@ -47,7 +47,7 @@ func LintFmtErrorfCalls(fset *token.FileSet, info types.Info, multipleWraps bool
 		args := call.Args[1:]
 		wrapCount := 0
 		for i := 0; i < len(args) && i < len(formatVerbs); i++ {
-			if !implementsError(info.Types[args[i]].Type) && !isErrorStringCall(info, args[i]) {
+			if !implementsError(info.Types[args[i]].Type) {
 				continue
 			}
 			verb := formatVerbs[i]
@@ -76,20 +76,6 @@ func LintFmtErrorfCalls(fset *token.FileSet, info types.Info, multipleWraps bool
 		}
 	}
 	return lints
-}
-
-// isErrorStringCall tests whether the expression is a string expression that
-// is the result of an `(error).Error()` method call.
-func isErrorStringCall(info types.Info, expr ast.Expr) bool {
-	if info.Types[expr].Type.String() == "string" {
-		if call, ok := expr.(*ast.CallExpr); ok {
-			if callSel, ok := call.Fun.(*ast.SelectorExpr); ok {
-				fun := info.Uses[callSel.Sel].(*types.Func)
-				return fun.Type().String() == "func() string" && fun.Name() == "Error"
-			}
-		}
-	}
-	return false
 }
 
 // printfFormatStringVerbs returns a normalized list of all the verbs that are used per argument to
