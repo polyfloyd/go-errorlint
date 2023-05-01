@@ -1,3 +1,9 @@
+## v1.4.1 (2023-05-01)
+
+### Fix
+
+- Tar allowlist should be archive/tar
+
 ## v1.4.0 (2023-03-13)
 
 ### Feat
