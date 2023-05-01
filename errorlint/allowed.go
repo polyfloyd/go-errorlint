@@ -10,8 +10,8 @@ var allowedErrors = []struct {
 	fun string
 }{
 	// pkg/archive/tar
-	{err: "io.EOF", fun: "(*tar.Reader).Next"},
-	{err: "io.EOF", fun: "(*tar.Reader).Read"},
+	{err: "io.EOF", fun: "(*archive/tar.Reader).Next"},
+	{err: "io.EOF", fun: "(*archive/tar.Reader).Read"},
 	// pkg/bufio
 	{err: "io.EOF", fun: "(*bufio.Reader).Discard"},
 	{err: "io.EOF", fun: "(*bufio.Reader).Peek"},

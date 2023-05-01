@@ -1,6 +1,7 @@
 package testdata
 
 import (
+	"archive/tar"
 	"bytes"
 	"database/sql"
 	"errors"
@@ -159,4 +160,15 @@ func HTTPErrServerClosed(s *http.Server) error {
 		return err
 	}
 	return nil
+}
+
+func TarHeader(r io.Reader) {
+	reader := tar.NewReader(r)
+	for {
+		header, err := reader.Next()
+		if err == io.EOF {
+			break
+		}
+		_ = header
+	}
 }
