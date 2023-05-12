@@ -1,3 +1,9 @@
+## v1.4.2 (2023-05-12)
+
+### Fix
+
+- Allowed checker panics in some cases (fixes #42)
+
 ## v1.4.1 (2023-05-01)
 
 ### Fix
