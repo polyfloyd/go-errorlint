@@ -4,6 +4,7 @@ import (
 	"archive/tar"
 	"bytes"
 	"database/sql"
+	"debug/elf"
 	"errors"
 	"fmt"
 	"io"
@@ -107,6 +108,48 @@ func IoReadFull(r io.Reader) {
 		fmt.Println(err)
 	}
 	if err == io.ErrUnexpectedEOF {
+		fmt.Println(err)
+	}
+}
+
+func IoReaderAt(r io.ReaderAt) {
+	var buf [4096]byte
+	_, err := r.ReadAt(buf[:], 0)
+	if err == io.EOF {
+		fmt.Println(err)
+	}
+}
+
+func IoLimitedReader(r *io.LimitedReader) {
+	var buf [4096]byte
+	_, err := r.Read(buf[:])
+	if err == io.EOF {
+		fmt.Println(err)
+	}
+}
+
+func IoSectionReader(r *io.SectionReader) {
+	var buf [4096]byte
+	_, err := r.Read(buf[:])
+	if err == io.EOF {
+		fmt.Println(err)
+	}
+	_, err = r.ReadAt(buf[:], 0)
+	if err == io.EOF {
+		fmt.Println(err)
+	}
+}
+
+func ElfOpen() {
+	_, err := elf.Open("file")
+	if err == io.EOF {
+		fmt.Println(err)
+	}
+}
+
+func ElfNewFile(r io.ReaderAt) {
+	_, err := elf.NewFile(r)
+	if err == io.EOF {
 		fmt.Println(err)
 	}
 }
