@@ -1,3 +1,9 @@
+## v1.4.3 (2023-06-30)
+
+### Fix
+
+- ignore io.EOF from some more sources
+
 ## v1.4.2 (2023-05-12)
 
 ### Fix
