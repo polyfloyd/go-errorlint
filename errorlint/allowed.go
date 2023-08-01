@@ -69,6 +69,8 @@ var allowedErrors = []struct {
 	{err: "io.EOF", fun: "(*strings.Reader).ReadAt"},
 	{err: "io.EOF", fun: "(*strings.Reader).ReadByte"},
 	{err: "io.EOF", fun: "(*strings.Reader).ReadRune"},
+	// golang.org/x/sys/unix
+	{err: "golang.org/x/sys/unix.ENOENT", fun: "golang.org/x/sys/unix.Rmdir"},
 }
 
 func isAllowedErrAndFunc(err, fun string) bool {
