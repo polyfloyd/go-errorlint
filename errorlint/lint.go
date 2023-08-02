@@ -288,10 +288,10 @@ func switchComparesNonNil(switchStmt *ast.SwitchStmt) bool {
 	return false
 }
 
-func LintErrorTypeAssertions(fset *token.FileSet, info types.Info) []analysis.Diagnostic {
+func LintErrorTypeAssertions(fset *token.FileSet, info *TypesInfoExt) []analysis.Diagnostic {
 	lints := []analysis.Diagnostic{}
 
-	for expr := range info.Types {
+	for expr := range info.TypesInfo.Types {
 		// Find type assertions.
 		typeAssert, ok := expr.(*ast.TypeAssertExpr)
 		if !ok {
@@ -299,7 +299,7 @@ func LintErrorTypeAssertions(fset *token.FileSet, info types.Info) []analysis.Di
 		}
 
 		// Find type assertions that operate on values of type error.
-		if !isErrorTypeAssertion(info, typeAssert) {
+		if !isErrorTypeAssertion(*info.TypesInfo, typeAssert) {
 			continue
 		}
 
@@ -309,7 +309,7 @@ func LintErrorTypeAssertions(fset *token.FileSet, info types.Info) []analysis.Di
 		})
 	}
 
-	for scope := range info.Scopes {
+	for scope := range info.TypesInfo.Scopes {
 		// Find type switches.
 		typeSwitch, ok := scope.(*ast.TypeSwitchStmt)
 		if !ok {
@@ -326,7 +326,7 @@ func LintErrorTypeAssertions(fset *token.FileSet, info types.Info) []analysis.Di
 		}
 
 		// Check whether the type switch is on a value of type error.
-		if !isErrorTypeAssertion(info, typeAssert) {
+		if !isErrorTypeAssertion(*info.TypesInfo, typeAssert) {
 			continue
 		}
 

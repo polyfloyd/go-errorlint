@@ -41,7 +41,7 @@ func run(pass *analysis.Pass) (interface{}, error) {
 		lints = append(lints, l...)
 	}
 	if checkAsserts {
-		l := LintErrorTypeAssertions(pass.Fset, *pass.TypesInfo)
+		l := LintErrorTypeAssertions(pass.Fset, extInfo)
 		lints = append(lints, l...)
 	}
 	if checkErrorf {
