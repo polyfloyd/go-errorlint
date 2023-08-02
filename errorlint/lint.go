@@ -303,6 +303,10 @@ func LintErrorTypeAssertions(fset *token.FileSet, info *TypesInfoExt) []analysis
 			continue
 		}
 
+		if isNodeInErrorIsFunc(info, typeAssert) {
+			continue
+		}
+
 		lints = append(lints, analysis.Diagnostic{
 			Message: "type assertion on error will fail on wrapped errors. Use errors.As to check for specific errors",
 			Pos:     typeAssert.Pos(),
@@ -327,6 +331,10 @@ func LintErrorTypeAssertions(fset *token.FileSet, info *TypesInfoExt) []analysis
 
 		// Check whether the type switch is on a value of type error.
 		if !isErrorTypeAssertion(*info.TypesInfo, typeAssert) {
+			continue
+		}
+
+		if isNodeInErrorIsFunc(info, typeSwitch) {
 			continue
 		}
 
