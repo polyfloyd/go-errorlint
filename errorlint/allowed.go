@@ -3,6 +3,7 @@ package errorlint
 import (
 	"fmt"
 	"go/ast"
+	"strings"
 )
 
 var allowedErrors = []struct {
@@ -71,7 +72,21 @@ var allowedErrors = []struct {
 	{err: "io.EOF", fun: "(*strings.Reader).ReadRune"},
 }
 
+var allowedErrorWildcards = []struct {
+	err string
+	fun string
+}{
+	// golang.org/x/sys/unix
+	{err: "golang.org/x/sys/unix.E", fun: "golang.org/x/sys/unix."},
+}
+
 func isAllowedErrAndFunc(err, fun string) bool {
+	for _, allow := range allowedErrorWildcards {
+		if strings.HasPrefix(fun, allow.fun) && strings.HasPrefix(err, allow.err) {
+			return true
+		}
+	}
+
 	for _, allow := range allowedErrors {
 		if allow.fun == fun && allow.err == err {
 			return true

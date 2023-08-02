@@ -10,6 +10,9 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"syscall"
+
+	"golang.org/x/sys/unix"
 )
 
 func CompareErrIndirect(r io.Reader) {
@@ -213,5 +216,14 @@ func TarHeader(r io.Reader) {
 			break
 		}
 		_ = header
+	}
+}
+
+func CompareUnixErrors() {
+	if err := unix.Rmdir("somepath"); err != unix.ENOENT {
+		fmt.Println(err)
+	}
+	if err := unix.Kill(1, syscall.SIGKILL); err != unix.EPERM {
+		fmt.Println(err)
 	}
 }
