@@ -25,7 +25,7 @@ jobs:
     - name: go build
       run: go build -v
     - name: go test
-      run: go test -test.v -race -cover
+      run: go test -test.v -race -cover ./...
 
   conventional-commits:
     runs-on: ubuntu-latest
