@@ -1,3 +1,16 @@
+## v1.4.4 (2023-08-20)
+
+### Fix
+
+- Is methods should be exempt for type assertions and switches too (#50)
+- add missing testdata
+- ignore unix errno values
+
+### Refactor
+
+- pass extinfo to type assertions
+- Permit matching on full paths of allowed errors
+
 ## v1.4.3 (2023-06-30)
 
 ### Fix
