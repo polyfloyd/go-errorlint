@@ -1,3 +1,9 @@
+## v1.4.5 (2023-09-08)
+
+### Fix
+
+- Infinite recursion in assignment finder (fixes #57)
+
 ## v1.4.4 (2023-08-20)
 
 ### Fix
