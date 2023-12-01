@@ -1,3 +1,9 @@
+## v1.4.6 (2023-12-01)
+
+### Fix
+
+- Allow type assertions of non-error types (fixes #61)
+
 ## v1.4.5 (2023-09-08)
 
 ### Fix
