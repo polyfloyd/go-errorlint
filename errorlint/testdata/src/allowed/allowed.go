@@ -3,6 +3,7 @@ package testdata
 import (
 	"archive/tar"
 	"bytes"
+	"context"
 	"database/sql"
 	"debug/elf"
 	"errors"
@@ -226,4 +227,14 @@ func CompareUnixErrors() {
 	if err := unix.Kill(1, syscall.SIGKILL); err != unix.EPERM {
 		fmt.Println(err)
 	}
+}
+
+func ContextErr(ctx context.Context) error {
+	if err := ctx.Err(); err == context.DeadlineExceeded {
+		return err
+	}
+	if err := ctx.Err(); err == context.Canceled {
+		return err
+	}
+	return nil
 }
