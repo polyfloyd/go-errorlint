@@ -1,3 +1,9 @@
+## v1.4.7 (2023-12-05)
+
+### Fix
+
+- Add context errors as allowed direct comparisons (#63)
+
 ## v1.4.6 (2023-12-01)
 
 ### Fix
