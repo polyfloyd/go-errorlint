@@ -1,3 +1,9 @@
+## v1.4.8 (2024-01-25)
+
+### Fix
+
+- Allow io.EOF from (io.ReadCloser).Read
+
 ## v1.4.7 (2023-12-05)
 
 ### Fix
