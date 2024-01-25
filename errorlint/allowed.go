@@ -41,6 +41,7 @@ var allowedErrors = []struct {
 	{err: "io.EOF", fun: "debug/elf.Open"},
 	{err: "io.EOF", fun: "debug/elf.NewFile"},
 	// pkg/io
+	{err: "io.EOF", fun: "(io.ReadCloser).Read"},
 	{err: "io.EOF", fun: "(io.Reader).Read"},
 	{err: "io.EOF", fun: "(io.ReaderAt).ReadAt"},
 	{err: "io.EOF", fun: "(*io.LimitedReader).Read"},
