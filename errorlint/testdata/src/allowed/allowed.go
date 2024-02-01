@@ -6,9 +6,12 @@ import (
 	"context"
 	"database/sql"
 	"debug/elf"
+	"encoding/csv"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"mime/multipart"
 	"net/http"
 	"os"
 	"syscall"
@@ -71,6 +74,14 @@ func CompareInline(db *sql.DB) {
 }
 
 func IoReadEOF(r io.Reader) {
+	var buf [4096]byte
+	_, err := r.Read(buf[:])
+	if err == io.EOF {
+		fmt.Println(err)
+	}
+}
+
+func IoReadCloserEOF(r io.ReadCloser) {
 	var buf [4096]byte
 	_, err := r.Read(buf[:])
 	if err == io.EOF {
@@ -237,4 +248,44 @@ func ContextErr(ctx context.Context) error {
 		return err
 	}
 	return nil
+}
+
+func JSONReader(r io.Reader) {
+	err := json.NewDecoder(r).Decode(nil)
+	if err == io.EOF {
+		fmt.Println(err)
+	}
+}
+
+func CSVReader(r io.Reader) {
+	_, err := csv.NewReader(r).Read()
+	if err == io.EOF {
+		fmt.Println(err)
+	}
+}
+
+func MIMEMultipartReader(r io.Reader, boundary string, raw bool) {
+	var err error
+	if raw {
+		_, err = multipart.NewReader(r, boundary).NextRawPart()
+	} else {
+		_, err = multipart.NewReader(r, boundary).NextPart()
+	}
+	if err == io.EOF {
+		fmt.Println(err)
+	}
+}
+
+func MIMEMultipartReadFrom(r io.Reader, boundary string, maxMemory int64) {
+	_, err := multipart.NewReader(r, boundary).ReadForm(maxMemory)
+	if err == multipart.ErrMessageTooLarge {
+		fmt.Println(err)
+	}
+}
+
+func SyscallErrors() {
+	err := syscall.Chmod("/dev/null", 0666)
+	if err == syscall.EINVAL {
+		fmt.Println(err)
+	}
 }
