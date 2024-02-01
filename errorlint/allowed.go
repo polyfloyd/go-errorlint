@@ -75,6 +75,14 @@ var allowedErrors = []struct {
 	// pkg/context
 	{err: "context.DeadlineExceeded", fun: "(context.Context).Err"},
 	{err: "context.Canceled", fun: "(context.Context).Err"},
+	// pkg/encoding/json
+	{err: "io.EOF", fun: "(*encoding/json.Decoder).Decode"},
+	// pkg/encoding/csv
+	{err: "io.EOF", fun: "(*encoding/csv.Reader).Read"},
+	// pkg/mime/multipart
+	{err: "io.EOF", fun: "(*mime/multipart.Reader).NextPart"},
+	{err: "io.EOF", fun: "(*mime/multipart.Reader).NextRawPart"},
+	{err: "mime/multipart.ErrMessageTooLarge", fun: "(*mime/multipart.Reader).ReadForm"},
 }
 
 var allowedErrorsMap = make(map[string]map[string]struct{})
@@ -92,6 +100,8 @@ var allowedErrorWildcards = []struct {
 	err string
 	fun string
 }{
+	// pkg/syscall
+	{err: "syscall.E", fun: "syscall."},
 	// golang.org/x/sys/unix
 	{err: "golang.org/x/sys/unix.E", fun: "golang.org/x/sys/unix."},
 }
