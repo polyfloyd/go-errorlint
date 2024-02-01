@@ -7,10 +7,12 @@ import (
 	"strings"
 )
 
-var allowedErrors = []struct {
+type AllowPair struct {
 	err string
 	fun string
-}{
+}
+
+var allowedErrors = []AllowPair{
 	// pkg/archive/tar
 	{err: "io.EOF", fun: "(*archive/tar.Reader).Next"},
 	{err: "io.EOF", fun: "(*archive/tar.Reader).Read"},
@@ -87,8 +89,8 @@ var allowedErrors = []struct {
 
 var allowedErrorsMap = make(map[string]map[string]struct{})
 
-func init() {
-	for _, pair := range allowedErrors {
+func allowedMapAppend(ap []AllowPair) {
+	for _, pair := range ap {
 		if _, ok := allowedErrorsMap[pair.err]; !ok {
 			allowedErrorsMap[pair.err] = make(map[string]struct{})
 		}
@@ -96,14 +98,19 @@ func init() {
 	}
 }
 
-var allowedErrorWildcards = []struct {
-	err string
-	fun string
-}{
+func init() {
+	allowedMapAppend(allowedErrors)
+}
+
+var allowedErrorWildcards = []AllowPair{
 	// pkg/syscall
 	{err: "syscall.E", fun: "syscall."},
 	// golang.org/x/sys/unix
 	{err: "golang.org/x/sys/unix.E", fun: "golang.org/x/sys/unix."},
+}
+
+func allowedWildcardAppend(ap []AllowPair) {
+	allowedErrorWildcards = append(allowedErrorWildcards, ap...)
 }
 
 func isAllowedErrAndFunc(err, fun string) bool {

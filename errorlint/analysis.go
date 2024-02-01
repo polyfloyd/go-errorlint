@@ -9,7 +9,10 @@ import (
 	"golang.org/x/tools/go/analysis"
 )
 
-func NewAnalyzer() *analysis.Analyzer {
+func NewAnalyzer(opts ...Option) *analysis.Analyzer {
+	for _, o := range opts {
+		o()
+	}
 	return &analysis.Analyzer{
 		Name:  "errorlint",
 		Doc:   "Source code linter for Go software that can be used to find code that will cause problems with the error wrapping scheme introduced in Go 1.13.",

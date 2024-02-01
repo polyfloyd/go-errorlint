@@ -39,6 +39,35 @@ func TestAllowedComparisons(t *testing.T) {
 	analysistest.Run(t, analysistest.TestData(), analyzer, "allowed")
 }
 
+func TestOptions(t *testing.T) {
+	testCases := []struct {
+		desc    string
+		opt     Option
+		pattern string
+	}{
+		{
+			desc: "WithAllowedErrors",
+			opt: WithAllowedErrors([]AllowPair{
+				{err: "io.EOF", fun: "example.com/pkg.Read"},
+			}),
+			pattern: "options/withAllowedErrors",
+		},
+		{
+			desc: "WithAllowedWildcard",
+			opt: WithAllowedWildcard([]AllowPair{
+				{err: "example.com/pkg.ErrMagic", fun: "example.com/pkg.Magic"},
+			}),
+			pattern: "options/withAllowedWildcard",
+		},
+	}
+	for _, tt := range testCases {
+		t.Run(tt.desc, func(t *testing.T) {
+			analyzer := NewAnalyzer(tt.opt)
+			analysistest.Run(t, analysistest.TestData(), analyzer, tt.pattern)
+		})
+	}
+}
+
 func TestIssueRegressions(t *testing.T) {
 	analyzer := NewAnalyzer()
 	analysistest.Run(t, analysistest.TestData(), analyzer, "issues")
