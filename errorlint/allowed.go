@@ -77,6 +77,17 @@ var allowedErrors = []struct {
 	{err: "context.Canceled", fun: "(context.Context).Err"},
 }
 
+var allowedErrorsMap = make(map[string]map[string]struct{})
+
+func init() {
+	for _, pair := range allowedErrors {
+		if _, ok := allowedErrorsMap[pair.err]; !ok {
+			allowedErrorsMap[pair.err] = make(map[string]struct{})
+		}
+		allowedErrorsMap[pair.err][pair.fun] = struct{}{}
+	}
+}
+
 var allowedErrorWildcards = []struct {
 	err string
 	fun string
@@ -86,17 +97,18 @@ var allowedErrorWildcards = []struct {
 }
 
 func isAllowedErrAndFunc(err, fun string) bool {
+	if allowedFuncs, allowErr := allowedErrorsMap[err]; allowErr {
+		if _, allow := allowedFuncs[fun]; allow {
+			return true
+		}
+	}
+
 	for _, allow := range allowedErrorWildcards {
 		if strings.HasPrefix(fun, allow.fun) && strings.HasPrefix(err, allow.err) {
 			return true
 		}
 	}
 
-	for _, allow := range allowedErrors {
-		if allow.fun == fun && allow.err == err {
-			return true
-		}
-	}
 	return false
 }
 
