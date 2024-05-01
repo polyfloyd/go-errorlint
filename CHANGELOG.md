@@ -1,3 +1,14 @@
+## v1.5.0 (2024-05-01)
+
+### Feat
+
+- extends Analyzer with custom allowed errors via functional options
+- add few more allowed errors from std
+
+### Refactor
+
+- speed up isAllowedErrAndFunc via map
+
 ## v1.4.8 (2024-01-25)
 
 ### Fix
