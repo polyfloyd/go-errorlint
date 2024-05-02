@@ -37,7 +37,7 @@ func init() {
 }
 
 func run(pass *analysis.Pass) (interface{}, error) {
-	lints := []analysis.Diagnostic{}
+	var lints []analysis.Diagnostic
 	extInfo := newTypesInfoExt(pass)
 	if checkComparison {
 		l := LintErrorComparisons(extInfo)
