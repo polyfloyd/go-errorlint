@@ -13,6 +13,9 @@ func NewAnalyzer(opts ...Option) *analysis.Analyzer {
 	for _, o := range opts {
 		o()
 	}
+
+	allowedMapAppend(allowedErrors)
+
 	return &analysis.Analyzer{
 		Name:  "errorlint",
 		Doc:   "Source code linter for Go software that can be used to find code that will cause problems with the error wrapping scheme introduced in Go 1.13.",
