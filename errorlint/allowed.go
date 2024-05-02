@@ -98,10 +98,6 @@ func allowedMapAppend(ap []AllowPair) {
 	}
 }
 
-func init() {
-	allowedMapAppend(allowedErrors)
-}
-
 var allowedErrorWildcards = []AllowPair{
 	// pkg/syscall
 	{err: "syscall.E", fun: "syscall."},

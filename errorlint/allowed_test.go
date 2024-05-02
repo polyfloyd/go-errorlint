@@ -5,6 +5,8 @@ import (
 )
 
 func Test_isAllowedErrAndFunc(t *testing.T) {
+	allowedMapAppend(allowedErrors)
+
 	testCases := []struct {
 		desc   string
 		fun    string
@@ -31,6 +33,7 @@ func Test_isAllowedErrAndFunc(t *testing.T) {
 		},
 		// {desc: "fail test", expect: true},
 	}
+
 	for _, tt := range testCases {
 		t.Run(tt.desc, func(t *testing.T) {
 			result := isAllowedErrAndFunc(tt.err, tt.fun)
