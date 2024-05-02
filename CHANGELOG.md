@@ -1,3 +1,11 @@
+## v1.5.1 (2024-05-02)
+
+### Fix
+
+- remove init flagset
+- exposed AllowPair fields
+- remove init function
+
 ## v1.5.0 (2024-05-01)
 
 ### Feat
