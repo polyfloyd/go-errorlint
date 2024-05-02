@@ -13,7 +13,7 @@ func NewAnalyzer(opts ...Option) *analysis.Analyzer {
 		o()
 	}
 
-	allowedMapAppend(allowedErrors)
+	setDefaultAllowedErrors()
 
 	a := &analysis.Analyzer{
 		Name: "errorlint",

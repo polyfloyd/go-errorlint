@@ -12,82 +12,84 @@ type AllowPair struct {
 	Fun string
 }
 
-var allowedErrors = []AllowPair{
-	// pkg/archive/tar
-	{Err: "io.EOF", Fun: "(*archive/tar.Reader).Next"},
-	{Err: "io.EOF", Fun: "(*archive/tar.Reader).Read"},
-	// pkg/bufio
-	{Err: "io.EOF", Fun: "(*bufio.Reader).Discard"},
-	{Err: "io.EOF", Fun: "(*bufio.Reader).Peek"},
-	{Err: "io.EOF", Fun: "(*bufio.Reader).Read"},
-	{Err: "io.EOF", Fun: "(*bufio.Reader).ReadByte"},
-	{Err: "io.EOF", Fun: "(*bufio.Reader).ReadBytes"},
-	{Err: "io.EOF", Fun: "(*bufio.Reader).ReadLine"},
-	{Err: "io.EOF", Fun: "(*bufio.Reader).ReadSlice"},
-	{Err: "io.EOF", Fun: "(*bufio.Reader).ReadString"},
-	{Err: "io.EOF", Fun: "(*bufio.Scanner).Scan"},
-	// pkg/bytes
-	{Err: "io.EOF", Fun: "(*bytes.Buffer).Read"},
-	{Err: "io.EOF", Fun: "(*bytes.Buffer).ReadByte"},
-	{Err: "io.EOF", Fun: "(*bytes.Buffer).ReadBytes"},
-	{Err: "io.EOF", Fun: "(*bytes.Buffer).ReadRune"},
-	{Err: "io.EOF", Fun: "(*bytes.Buffer).ReadString"},
-	{Err: "io.EOF", Fun: "(*bytes.Reader).Read"},
-	{Err: "io.EOF", Fun: "(*bytes.Reader).ReadAt"},
-	{Err: "io.EOF", Fun: "(*bytes.Reader).ReadByte"},
-	{Err: "io.EOF", Fun: "(*bytes.Reader).ReadRune"},
-	{Err: "io.EOF", Fun: "(*bytes.Reader).ReadString"},
-	// pkg/database/sql
-	{Err: "database/sql.ErrNoRows", Fun: "(*database/sql.Row).Scan"},
-	// pkg/debug/elf
-	{Err: "io.EOF", Fun: "debug/elf.Open"},
-	{Err: "io.EOF", Fun: "debug/elf.NewFile"},
-	// pkg/io
-	{Err: "io.EOF", Fun: "(io.ReadCloser).Read"},
-	{Err: "io.EOF", Fun: "(io.Reader).Read"},
-	{Err: "io.EOF", Fun: "(io.ReaderAt).ReadAt"},
-	{Err: "io.EOF", Fun: "(*io.LimitedReader).Read"},
-	{Err: "io.EOF", Fun: "(*io.SectionReader).Read"},
-	{Err: "io.EOF", Fun: "(*io.SectionReader).ReadAt"},
-	{Err: "io.ErrClosedPipe", Fun: "(*io.PipeWriter).Write"},
-	{Err: "io.ErrShortBuffer", Fun: "io.ReadAtLeast"},
-	{Err: "io.ErrUnexpectedEOF", Fun: "io.ReadAtLeast"},
-	{Err: "io.EOF", Fun: "io.ReadFull"},
-	{Err: "io.ErrUnexpectedEOF", Fun: "io.ReadFull"},
-	// pkg/net/http
-	{Err: "net/http.ErrServerClosed", Fun: "(*net/http.Server).ListenAndServe"},
-	{Err: "net/http.ErrServerClosed", Fun: "(*net/http.Server).ListenAndServeTLS"},
-	{Err: "net/http.ErrServerClosed", Fun: "(*net/http.Server).Serve"},
-	{Err: "net/http.ErrServerClosed", Fun: "(*net/http.Server).ServeTLS"},
-	{Err: "net/http.ErrServerClosed", Fun: "net/http.ListenAndServe"},
-	{Err: "net/http.ErrServerClosed", Fun: "net/http.ListenAndServeTLS"},
-	{Err: "net/http.ErrServerClosed", Fun: "net/http.Serve"},
-	{Err: "net/http.ErrServerClosed", Fun: "net/http.ServeTLS"},
-	// pkg/os
-	{Err: "io.EOF", Fun: "(*os.File).Read"},
-	{Err: "io.EOF", Fun: "(*os.File).ReadAt"},
-	{Err: "io.EOF", Fun: "(*os.File).ReadDir"},
-	{Err: "io.EOF", Fun: "(*os.File).Readdir"},
-	{Err: "io.EOF", Fun: "(*os.File).Readdirnames"},
-	// pkg/strings
-	{Err: "io.EOF", Fun: "(*strings.Reader).Read"},
-	{Err: "io.EOF", Fun: "(*strings.Reader).ReadAt"},
-	{Err: "io.EOF", Fun: "(*strings.Reader).ReadByte"},
-	{Err: "io.EOF", Fun: "(*strings.Reader).ReadRune"},
-	// pkg/context
-	{Err: "context.DeadlineExceeded", Fun: "(context.Context).Err"},
-	{Err: "context.Canceled", Fun: "(context.Context).Err"},
-	// pkg/encoding/json
-	{Err: "io.EOF", Fun: "(*encoding/json.Decoder).Decode"},
-	// pkg/encoding/csv
-	{Err: "io.EOF", Fun: "(*encoding/csv.Reader).Read"},
-	// pkg/mime/multipart
-	{Err: "io.EOF", Fun: "(*mime/multipart.Reader).NextPart"},
-	{Err: "io.EOF", Fun: "(*mime/multipart.Reader).NextRawPart"},
-	{Err: "mime/multipart.ErrMessageTooLarge", Fun: "(*mime/multipart.Reader).ReadForm"},
-}
-
 var allowedErrorsMap = make(map[string]map[string]struct{})
+
+func setDefaultAllowedErrors() {
+	allowedMapAppend([]AllowPair{
+		// pkg/archive/tar
+		{Err: "io.EOF", Fun: "(*archive/tar.Reader).Next"},
+		{Err: "io.EOF", Fun: "(*archive/tar.Reader).Read"},
+		// pkg/bufio
+		{Err: "io.EOF", Fun: "(*bufio.Reader).Discard"},
+		{Err: "io.EOF", Fun: "(*bufio.Reader).Peek"},
+		{Err: "io.EOF", Fun: "(*bufio.Reader).Read"},
+		{Err: "io.EOF", Fun: "(*bufio.Reader).ReadByte"},
+		{Err: "io.EOF", Fun: "(*bufio.Reader).ReadBytes"},
+		{Err: "io.EOF", Fun: "(*bufio.Reader).ReadLine"},
+		{Err: "io.EOF", Fun: "(*bufio.Reader).ReadSlice"},
+		{Err: "io.EOF", Fun: "(*bufio.Reader).ReadString"},
+		{Err: "io.EOF", Fun: "(*bufio.Scanner).Scan"},
+		// pkg/bytes
+		{Err: "io.EOF", Fun: "(*bytes.Buffer).Read"},
+		{Err: "io.EOF", Fun: "(*bytes.Buffer).ReadByte"},
+		{Err: "io.EOF", Fun: "(*bytes.Buffer).ReadBytes"},
+		{Err: "io.EOF", Fun: "(*bytes.Buffer).ReadRune"},
+		{Err: "io.EOF", Fun: "(*bytes.Buffer).ReadString"},
+		{Err: "io.EOF", Fun: "(*bytes.Reader).Read"},
+		{Err: "io.EOF", Fun: "(*bytes.Reader).ReadAt"},
+		{Err: "io.EOF", Fun: "(*bytes.Reader).ReadByte"},
+		{Err: "io.EOF", Fun: "(*bytes.Reader).ReadRune"},
+		{Err: "io.EOF", Fun: "(*bytes.Reader).ReadString"},
+		// pkg/database/sql
+		{Err: "database/sql.ErrNoRows", Fun: "(*database/sql.Row).Scan"},
+		// pkg/debug/elf
+		{Err: "io.EOF", Fun: "debug/elf.Open"},
+		{Err: "io.EOF", Fun: "debug/elf.NewFile"},
+		// pkg/io
+		{Err: "io.EOF", Fun: "(io.ReadCloser).Read"},
+		{Err: "io.EOF", Fun: "(io.Reader).Read"},
+		{Err: "io.EOF", Fun: "(io.ReaderAt).ReadAt"},
+		{Err: "io.EOF", Fun: "(*io.LimitedReader).Read"},
+		{Err: "io.EOF", Fun: "(*io.SectionReader).Read"},
+		{Err: "io.EOF", Fun: "(*io.SectionReader).ReadAt"},
+		{Err: "io.ErrClosedPipe", Fun: "(*io.PipeWriter).Write"},
+		{Err: "io.ErrShortBuffer", Fun: "io.ReadAtLeast"},
+		{Err: "io.ErrUnexpectedEOF", Fun: "io.ReadAtLeast"},
+		{Err: "io.EOF", Fun: "io.ReadFull"},
+		{Err: "io.ErrUnexpectedEOF", Fun: "io.ReadFull"},
+		// pkg/net/http
+		{Err: "net/http.ErrServerClosed", Fun: "(*net/http.Server).ListenAndServe"},
+		{Err: "net/http.ErrServerClosed", Fun: "(*net/http.Server).ListenAndServeTLS"},
+		{Err: "net/http.ErrServerClosed", Fun: "(*net/http.Server).Serve"},
+		{Err: "net/http.ErrServerClosed", Fun: "(*net/http.Server).ServeTLS"},
+		{Err: "net/http.ErrServerClosed", Fun: "net/http.ListenAndServe"},
+		{Err: "net/http.ErrServerClosed", Fun: "net/http.ListenAndServeTLS"},
+		{Err: "net/http.ErrServerClosed", Fun: "net/http.Serve"},
+		{Err: "net/http.ErrServerClosed", Fun: "net/http.ServeTLS"},
+		// pkg/os
+		{Err: "io.EOF", Fun: "(*os.File).Read"},
+		{Err: "io.EOF", Fun: "(*os.File).ReadAt"},
+		{Err: "io.EOF", Fun: "(*os.File).ReadDir"},
+		{Err: "io.EOF", Fun: "(*os.File).Readdir"},
+		{Err: "io.EOF", Fun: "(*os.File).Readdirnames"},
+		// pkg/strings
+		{Err: "io.EOF", Fun: "(*strings.Reader).Read"},
+		{Err: "io.EOF", Fun: "(*strings.Reader).ReadAt"},
+		{Err: "io.EOF", Fun: "(*strings.Reader).ReadByte"},
+		{Err: "io.EOF", Fun: "(*strings.Reader).ReadRune"},
+		// pkg/context
+		{Err: "context.DeadlineExceeded", Fun: "(context.Context).Err"},
+		{Err: "context.Canceled", Fun: "(context.Context).Err"},
+		// pkg/encoding/json
+		{Err: "io.EOF", Fun: "(*encoding/json.Decoder).Decode"},
+		// pkg/encoding/csv
+		{Err: "io.EOF", Fun: "(*encoding/csv.Reader).Read"},
+		// pkg/mime/multipart
+		{Err: "io.EOF", Fun: "(*mime/multipart.Reader).NextPart"},
+		{Err: "io.EOF", Fun: "(*mime/multipart.Reader).NextRawPart"},
+		{Err: "mime/multipart.ErrMessageTooLarge", Fun: "(*mime/multipart.Reader).ReadForm"},
+	})
+}
 
 func allowedMapAppend(ap []AllowPair) {
 	for _, pair := range ap {

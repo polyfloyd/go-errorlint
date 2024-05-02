@@ -5,7 +5,7 @@ import (
 )
 
 func Test_isAllowedErrAndFunc(t *testing.T) {
-	allowedMapAppend(allowedErrors)
+	setDefaultAllowedErrors()
 
 	testCases := []struct {
 		desc   string
