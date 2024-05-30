@@ -1,3 +1,9 @@
+## v1.5.2 (2024-05-30)
+
+### Fix
+
+- Also apply allowed list to value switch statements
+
 ## v1.5.1 (2024-05-02)
 
 ### Fix
