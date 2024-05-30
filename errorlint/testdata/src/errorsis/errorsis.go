@@ -76,10 +76,10 @@ func NotEqualOperatorYoda() {
 
 func CompareSwitch() {
 	err := doThing()
-	switch err { // want `switch on an error will fail on wrapped errors. Use errors.Is to check for specific errors`
+	switch err {
 	case nil:
 		fmt.Println("nil")
-	case ErrFoo:
+	case ErrFoo: // want `switch on an error will fail on wrapped errors. Use errors.Is to check for specific errors`
 		fmt.Println("ErrFoo")
 	}
 }
@@ -95,8 +95,8 @@ func CompareSwitchSafe() {
 }
 
 func CompareSwitchInline() {
-	switch doThing() { // want `switch on an error will fail on wrapped errors. Use errors.Is to check for specific errors`
-	case ErrFoo:
+	switch doThing() {
+	case ErrFoo: // want `switch on an error will fail on wrapped errors. Use errors.Is to check for specific errors`
 		fmt.Println("ErrFoo")
 	}
 }
