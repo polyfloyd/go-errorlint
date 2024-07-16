@@ -12,6 +12,10 @@ information about the error's cause.
 
 For details on Go error wrapping, see: https://golang.org/pkg/errors/
 
+## Installation
+```
+go install github.com/polyfloyd/go-errorlint@latest
+```
 
 ## Usage
 go-errorlint accepts a set of package names similar to golint:
