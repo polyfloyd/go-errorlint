@@ -45,7 +45,7 @@ func Test_isAllowedErrAndFunc(t *testing.T) {
 }
 
 func Benchmark_isAllowedErrAndFunc(b *testing.B) {
-	var benchCases = []struct {
+	benchCases := []struct {
 		desc string
 		err  string
 		fun  string
