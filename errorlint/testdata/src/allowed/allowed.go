@@ -11,6 +11,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"mime"
 	"mime/multipart"
 	"net/http"
 	"os"
@@ -279,6 +280,13 @@ func MIMEMultipartReader(r io.Reader, boundary string, raw bool) {
 func MIMEMultipartReadFrom(r io.Reader, boundary string, maxMemory int64) {
 	_, err := multipart.NewReader(r, boundary).ReadForm(maxMemory)
 	if err == multipart.ErrMessageTooLarge {
+		fmt.Println(err)
+	}
+}
+
+func MimeParseMediaType(contentType string) {
+	_, _, err := mime.ParseMediaType(contentType)
+	if err == mime.ErrInvalidMediaParameter {
 		fmt.Println(err)
 	}
 }
