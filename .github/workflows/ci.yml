@@ -28,6 +28,7 @@ jobs:
       run: go test -test.v -race -cover ./...
 
   conventional-commits:
+    if: github.event_name == 'pull_request' # Only check PRs.
     runs-on: ubuntu-latest
 
     steps:
@@ -35,5 +36,4 @@ jobs:
       with:
         fetch-depth: 0
     - run: pip3 install -U Commitizen
-      # The commit hash here is that of the commit where we started using conventional commits.
-    - run: cz check --rev-range deebab92..HEAD
+    - run: cz check --rev-range origin/${{ github.base_ref }}..HEAD
