@@ -1,3 +1,9 @@
+## v1.6.0 (2024-08-06)
+
+### Feat
+
+- add exception for mime.ErrInvalidMediaParameter
+
 ## v1.5.2 (2024-05-30)
 
 ### Fix
