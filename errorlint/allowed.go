@@ -84,6 +84,7 @@ func setDefaultAllowedErrors() {
 		{Err: "context.Canceled", Fun: "(context.Context).Err"},
 		// pkg/encoding/json
 		{Err: "io.EOF", Fun: "(*encoding/json.Decoder).Decode"},
+		{Err: "io.EOF", Fun: "(*encoding/json.Decoder).Token"},
 		// pkg/encoding/csv
 		{Err: "io.EOF", Fun: "(*encoding/csv.Reader).Read"},
 		// pkg/mime/multipart
