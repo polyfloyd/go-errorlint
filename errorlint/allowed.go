@@ -53,6 +53,7 @@ func setDefaultAllowedErrors() {
 		{Err: "io.EOF", Fun: "(*io.SectionReader).Read"},
 		{Err: "io.EOF", Fun: "(*io.SectionReader).ReadAt"},
 		{Err: "io.ErrClosedPipe", Fun: "(*io.PipeWriter).Write"},
+		{Err: "io.EOF", Fun: "io.ReadAtLeast"},
 		{Err: "io.ErrShortBuffer", Fun: "io.ReadAtLeast"},
 		{Err: "io.ErrUnexpectedEOF", Fun: "io.ReadAtLeast"},
 		{Err: "io.EOF", Fun: "io.ReadFull"},

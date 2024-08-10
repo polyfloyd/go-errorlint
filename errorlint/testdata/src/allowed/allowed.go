@@ -106,15 +106,13 @@ func IoPipeWriterWrite(w *io.PipeWriter) {
 	}
 }
 
-func IoReadAtLeast(r io.Reader) {
+func IoReadAtLeast(r io.Reader) error {
 	var buf [4096]byte
 	_, err := io.ReadAtLeast(r, buf[:], 8192)
-	if err == io.ErrShortBuffer {
-		fmt.Println(err)
+	if err == io.ErrShortBuffer || err == io.ErrUnexpectedEOF || err == io.EOF {
+		return err
 	}
-	if err == io.ErrUnexpectedEOF {
-		fmt.Println(err)
-	}
+	return nil
 }
 
 func IoReadFull(r io.Reader) {
