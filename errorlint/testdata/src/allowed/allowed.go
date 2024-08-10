@@ -251,11 +251,16 @@ func ContextErr(ctx context.Context) error {
 	return nil
 }
 
-func JSONReader(r io.Reader) {
-	err := json.NewDecoder(r).Decode(nil)
+func JSONReader(dec *json.Decoder) (err error) {
+	_, err = dec.Token()
 	if err == io.EOF {
-		fmt.Println(err)
+		return
 	}
+	err = dec.Decode(nil)
+	if err == io.EOF {
+		return
+	}
+	return
 }
 
 func CSVReader(r io.Reader) {
