@@ -15,6 +15,11 @@ func NonWrappingVerb() error {
 	return fmt.Errorf("error: %w", err) // want "non-wrapping format verb for fmt.Errorf. Use `%w` to format errors"
 }
 
+func NonWrappingTVerb() error {
+	err := errors.New("oops")
+	return fmt.Errorf("error: %T", err)
+}
+
 func DoubleNonWrappingVerb() error {
 	err := errors.New("oops")
 	return fmt.Errorf("%w %w", err, err) // want "non-wrapping format verb for fmt.Errorf. Use `%w` to format errors"
@@ -25,6 +30,13 @@ func ErrorOneWrap() error {
 	err2 := errors.New("oops2")
 	err3 := errors.New("oops3")
 	return fmt.Errorf("%w, %w, %w", err1, err2, err3) // want "non-wrapping format verb for fmt.Errorf. Use `%w` to format errors"
+}
+
+func ValidNonWrappingTVerb() error {
+	err1 := errors.New("oops1")
+	err2 := errors.New("oops2")
+	err3 := errors.New("oops3")
+	return fmt.Errorf("%w, %T, %w", err1, err2, err3)
 }
 
 func ErrorMultipleWraps() error {
