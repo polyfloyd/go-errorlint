@@ -1,3 +1,14 @@
+## v1.7.0 (2024-11-14)
+
+### Fix
+
+- allow %T verb to not be wrapped
+
+### Feat
+
+- ignore io.EOF from io.ReadAtLeast
+- add exception for encoding/json.decoder.Token
+
 ## v1.6.0 (2024-08-06)
 
 ### Feat
