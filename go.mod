@@ -1,6 +1,6 @@
 module github.com/polyfloyd/go-errorlint
 
-go 1.20
+go 1.22.0
 
 require golang.org/x/tools v0.27.0
 

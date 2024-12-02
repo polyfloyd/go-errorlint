@@ -20,8 +20,11 @@ jobs:
       with:
         go-version: stable
 
-    - name: Get dependencies
-      run: go get -v -t -d ./...
+    - name: Check go mod
+      run: |
+        go mod tidy
+        git diff --exit-code go.mod
+        git diff --exit-code go.sum
     - name: go build
       run: go build -v
     - name: go test
