@@ -1,3 +1,9 @@
+## v1.7.1 (2025-02-01)
+
+### Fix
+
+- golang.org/x/tools requires go 1.22
+
 ## v1.7.0 (2024-11-14)
 
 ### Fix
