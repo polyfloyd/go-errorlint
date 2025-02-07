@@ -25,6 +25,8 @@ jobs:
         go mod tidy
         git diff --exit-code go.mod
         git diff --exit-code go.sum
+    - name: gofmt
+      run: gofmt -s -d .
     - name: go build
       run: go build -v
     - name: go test
