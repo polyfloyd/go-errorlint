@@ -100,8 +100,12 @@ func LintFmtErrorfCalls(fset *token.FileSet, info types.Info, multipleWraps bool
 						Pos:     arg.Pos(),
 					}
 				}
+				fixMessage := "Use `%w` to format errors"
+				if len(lint.SuggestedFixes) > 0 {
+					fixMessage += fmt.Sprintf(" (%d)", len(lint.SuggestedFixes)+1)
+				}
 				lint.SuggestedFixes = append(lint.SuggestedFixes, analysis.SuggestedFix{
-					Message: "Use `%w` to format errors",
+					Message: fixMessage,
 					TextEdits: []analysis.TextEdit{{
 						Pos:     strStart + token.Pos(verb.formatOffset) + 1,
 						End:     strStart + token.Pos(verb.formatOffset) + 2,
