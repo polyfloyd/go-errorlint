@@ -24,6 +24,18 @@ go-errorlint ./...
 ```
 If there are one or more results, the exit status is set to `1`.
 
+To automatically fix issues where possible, use the `-fix` flag:
+```
+go-errorlint -fix ./...
+```
+
+The tool can automatically fix:
+1. Non-wrapping format verb for fmt.Errorf (changing `%v` to `%w`)
+2. Direct error comparisons (replacing `err == ErrFoo` with `errors.Is(err, ErrFoo)`)
+3. Type assertions on errors (replacing `err.(*MyError)` with `errors.As` usage)
+
+Complex cases like switches on errors or type switches cannot be automatically fixed.
+
 
 ## Examples
 
