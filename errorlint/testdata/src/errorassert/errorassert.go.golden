@@ -17,6 +17,13 @@ func (*AnotherError) Error() string {
 	return "another error"
 }
 
+// ValueError implements error with a value receiver, not a pointer receiver
+type ValueError struct{}
+
+func (ValueError) Error() string {
+	return "value error"
+}
+
 func doSomething() error {
 	return &MyError{}
 }
@@ -25,11 +32,19 @@ func doSomethingWrapped() error {
 	return fmt.Errorf("wrapped: %w", &MyError{})
 }
 
+func doSomethingValueError() error {
+	return ValueError{}
+}
+
+func doSomethingValueWrapped() error {
+	return fmt.Errorf("wrapped value: %w", ValueError{})
+}
+
 // This should be flagged - direct type assertion
 func TypeAssertionDirect() {
 	err := doSomething()
-	me := new(MyError)
-	ok := errors.As(err, me) // want "type assertion on error will fail on wrapped errors. Use errors.As to check for specific errors"
+	me := &MyError{}
+	ok := errors.As(err, &me) // want "type assertion on error will fail on wrapped errors. Use errors.As to check for specific errors"
 	if ok {
 		fmt.Println("got my error:", me)
 	}
@@ -38,30 +53,75 @@ func TypeAssertionDirect() {
 // This should be flagged - type assertion in a simple assignment
 func TypeAssertionAssignment() {
 	err := doSomething()
-	myErr := new(MyError)
-	ok := errors.As(err, myErr) // want "type assertion on error will fail on wrapped errors. Use errors.As to check for specific errors"
+	myErr := &MyError{}
+	ok := errors.As(err, &myErr) // want "type assertion on error will fail on wrapped errors. Use errors.As to check for specific errors"
 	fmt.Println(myErr, ok)
 }
 
 // This should be flagged - type assertion in if statement
 func TypeAssertionInIf() {
 	err := doSomething()
-	if me := new(MyError); errors.As(err, me) { // want "type assertion on error will fail on wrapped errors. Use errors.As to check for specific errors"
+	me := &MyError{}
+	if errors.As(err, &me) { // want "type assertion on error will fail on wrapped errors. Use errors.As to check for specific errors"
 		fmt.Println("got my error:", me)
 	}
+}
+
+// This should be flagged - value type assertion in if statement
+func ValueTypeAssertionInIf() {
+	err := doSomethingValueError()
+	var ve ValueError
+	if errors.As(err, &ve) { // want "type assertion on error will fail on wrapped errors. Use errors.As to check for specific errors"
+		fmt.Println("got value error:", ve)
+	}
+}
+
+// This should be flagged - value type assertion in assignment
+func ValueTypeAssertionAssignment() {
+	err := doSomethingValueError()
+	var ve ValueError
+	ok := errors.As(err, &ve) // want "type assertion on error will fail on wrapped errors. Use errors.As to check for specific errors"
+	fmt.Println(ve, ok)
+}
+
+// This should be flagged - direct value type assertion
+func ValueTypeAssertionDirect() {
+	err := doSomethingValueError()
+	_ = func() ValueError {
+		var target ValueError
+		_ = errors.As(err, &target)
+		return target
+	}() // want "type assertion on error will fail on wrapped errors. Use errors.As to check for specific errors"
 }
 
 // This should be flagged - type switch
 func TypeSwitchStatement() {
 	err := doSomething()
 	{
-		var err_case_0 *MyError
-		var err_case_1 *AnotherError
+		var errCase0 *MyError
+		var errCase1 *AnotherError
 		switch {
-		case errors.As(err, &err_case_0):
+		case errors.As(err, &errCase0):
 			fmt.Println("my error")
-		case errors.As(err, &err_case_1):
+		case errors.As(err, &errCase1):
 			fmt.Println("another error")
+		default:
+			fmt.Println("unknown error")
+		}
+	}
+}
+
+// This should be flagged - type switch with value type
+func TypeSwitchWithValueType() {
+	err := doSomethingValueError()
+	{
+		var errCase0 ValueError
+		var errCase1 *MyError
+		switch {
+		case errors.As(err, &errCase0):
+			fmt.Println("value error")
+		case errors.As(err, &errCase1):
+			fmt.Println("my error")
 		default:
 			fmt.Println("unknown error")
 		}
@@ -73,11 +133,12 @@ func TypeSwitchWithAssignment() {
 	err := doSomething()
 	{
 		var e *MyError
+		var e1 *AnotherError
 		switch {
 		case errors.As(err, &e):
 			fmt.Println("my error:", e)
-		case errors.As(err, &e):
-			fmt.Println("another error:", e)
+		case errors.As(err, &e1):
+			fmt.Println("another error:", e1)
 		default:
 			fmt.Println("unknown error:", e)
 		}
@@ -90,6 +151,15 @@ func UsingErrorsAs() {
 	var me *MyError
 	if errors.As(err, &me) {
 		fmt.Println("got my error:", me)
+	}
+}
+
+// This should NOT be flagged - using errors.As with value type
+func UsingErrorsAsWithValueType() {
+	err := doSomethingValueWrapped()
+	var ve ValueError
+	if errors.As(err, &ve) {
+		fmt.Println("got value error:", ve)
 	}
 }
 
