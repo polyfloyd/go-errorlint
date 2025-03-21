@@ -24,6 +24,23 @@ func (ValueError) Error() string {
 	return "value error"
 }
 
+// CustomUnwrapError demonstrates custom unwrap implementation
+type CustomUnwrapError struct {
+	inner error
+}
+
+func (e *CustomUnwrapError) Error() string { return "custom: " + e.inner.Error() }
+func (e *CustomUnwrapError) Unwrap() error { return e.inner }
+
+// CustomIsError demonstrates custom Is implementation
+type CustomIsError struct{}
+
+func (*CustomIsError) Error() string { return "custom is error" }
+func (*CustomIsError) Is(target error) bool {
+	_, ok := target.(*MyError)
+	return ok
+}
+
 func doSomething() error {
 	return &MyError{}
 }
@@ -38,6 +55,18 @@ func doSomethingValueError() error {
 
 func doSomethingValueWrapped() error {
 	return fmt.Errorf("wrapped value: %w", ValueError{})
+}
+
+func getCustomUnwrapError() error {
+	return &CustomUnwrapError{inner: &MyError{}}
+}
+
+func getCustomIsError() error {
+	return &CustomIsError{}
+}
+
+func deepWrappedError() error {
+	return fmt.Errorf("level1: %w", fmt.Errorf("level2: %w", &MyError{}))
 }
 
 // This should be flagged - direct type assertion
@@ -147,5 +176,58 @@ func NonErrorTypeAssertion() {
 	var i interface{} = "hello"
 	if s, ok := i.(string); ok {
 		fmt.Println(s)
+	}
+}
+
+// This should be flagged - type assertion on an error with custom unwrap
+func TypeAssertCustomUnwrap() {
+	err := getCustomUnwrapError()
+	me, ok := err.(*MyError) // want "type assertion on error will fail on wrapped errors. Use errors.As to check for specific errors"
+	if ok {
+		fmt.Println("got my error:", me)
+	}
+}
+
+// This should be flagged - type assertion on deeply wrapped error
+func TypeAssertDeepWrapped() {
+	err := deepWrappedError()
+	me, ok := err.(*MyError) // want "type assertion on error will fail on wrapped errors. Use errors.As to check for specific errors"
+	if ok {
+		fmt.Println("got my error:", me)
+	}
+}
+
+// This should be flagged - type assertion on error with custom Is method
+func TypeAssertCustomIs() {
+	err := getCustomIsError()
+	me, ok := err.(*MyError) // want "type assertion on error will fail on wrapped errors. Use errors.As to check for specific errors"
+	if ok {
+		fmt.Println("got my error:", me)
+	}
+}
+
+// This tests the error conversion case
+func ErrorConversion() {
+	var err error = &MyError{}
+	var iface interface{} = err
+
+	// This should NOT be flagged - not asserting on an error type
+	_, ok1 := iface.(*MyError)
+
+	// This should be flagged - asserting on an error type
+	_, ok2 := err.(*MyError) // want "type assertion on error will fail on wrapped errors. Use errors.As to check for specific errors"
+
+	fmt.Println(ok1, ok2)
+}
+
+// This should NOT be flagged - using errors.As with a pointer to a pointer
+func UsingErrorsAsWithPointerToPointer() {
+	var err error = &MyError{}
+
+	me := new(*MyError)
+	if errors.As(err, me) {
+		fmt.Println(me)
+	} else {
+		fmt.Println("-")
 	}
 }

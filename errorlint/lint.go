@@ -489,7 +489,9 @@ func LintErrorTypeAssertions(fset *token.FileSet, info *TypesInfoExt) []analysis
 		// For assignment statements like: targetErr, ok := err.(*SomeError)
 		if assign, ok := parent.(*ast.AssignStmt); ok && len(assign.Lhs) == 2 {
 			if id, ok := assign.Lhs[0].(*ast.Ident); ok {
-				varName := id.Name
+				// Generate a suitable variable name, handling underscore case
+				// Example: _, ok := err.(*MyError) -> myError := &MyError{}; ok := errors.As(err, &myError)
+				varName := generateErrorVarName(id.Name, baseType)
 
 				// If this is part of an if statement initialization
 				ifParent, isIfInit := info.NodeParent[assign].(*ast.IfStmt)
@@ -532,9 +534,20 @@ func LintErrorTypeAssertions(fset *token.FileSet, info *TypesInfoExt) []analysis
 				} else {
 					varDecl = fmt.Sprintf("var %s %s", varName, baseType)
 				}
+
+				// Preserve the original name of the "ok" variable
+				// Example: myErr, wasFound := err.(*MyError)
+				// Should use "wasFound" in the transformed code, not just "ok"
+				okName := "ok" // Default
+				if len(assign.Lhs) > 1 {
+					if okIdent, okOk := assign.Lhs[1].(*ast.Ident); okOk && okIdent.Name != "_" {
+						okName = okIdent.Name
+					}
+				}
+
 				// Align with golden file format
-				replacement := fmt.Sprintf("%s\nok := errors.As(%s, &%s)",
-					varDecl, errExpr, varName)
+				replacement := fmt.Sprintf("%s\n%s := errors.As(%s, &%s)",
+					varDecl, okName, errExpr, varName)
 
 				diagnostic.SuggestedFixes = []analysis.SuggestedFix{{
 					Message: "Use errors.As() for type assertions on errors",
@@ -551,15 +564,15 @@ func LintErrorTypeAssertions(fset *token.FileSet, info *TypesInfoExt) []analysis
 
 		if _, ok := parent.(*ast.IfStmt); ok {
 			// For if statements without initialization but with direct type assertion in condition
-			// This case is less common but could happen
+			varName := generateErrorVarName("target", baseType)
 			var varDecl string
 			if isPointerType {
-				varDecl = fmt.Sprintf("target := &%s{}", baseType)
+				varDecl = fmt.Sprintf("%s := &%s{}", varName, baseType)
 			} else {
-				varDecl = fmt.Sprintf("var target %s", baseType)
+				varDecl = fmt.Sprintf("var %s %s", varName, baseType)
 			}
-			replacement := fmt.Sprintf("%s\nif errors.As(%s, &target)",
-				varDecl, errExpr)
+			replacement := fmt.Sprintf("%s\nif errors.As(%s, &%s)",
+				varDecl, errExpr, varName)
 
 			diagnostic.SuggestedFixes = []analysis.SuggestedFix{{
 				Message: "Use errors.As() for type assertions on errors",
@@ -573,17 +586,19 @@ func LintErrorTypeAssertions(fset *token.FileSet, info *TypesInfoExt) []analysis
 			continue
 		}
 
-		// For standalone type assertions: err.(*SomeError) or err.(SomeError).
-		// Create an anonymous function that handles the errors.As call.
+		// Handle standalone type assertions without assignment
+		// Example: _ = err.(*MyError)
+		// Transforms to: _ = func() *MyError { var target *MyError; _ = errors.As(err, &target); return target }()
+		varName := generateErrorVarName("target", baseType)
 		var targetDecl string
 		if isPointerType {
-			targetDecl = fmt.Sprintf("target := &%s{}", baseType)
+			targetDecl = fmt.Sprintf("%s := &%s{}", varName, baseType)
 		} else {
-			targetDecl = fmt.Sprintf("var target %s", baseType)
+			targetDecl = fmt.Sprintf("var %s %s", varName, baseType)
 		}
 
-		replacement := fmt.Sprintf("func() %s {\n\t%s\n\t_ = errors.As(%s, &target)\n\treturn target\n}()",
-			targetType, targetDecl, errExpr)
+		replacement := fmt.Sprintf("func() %s {\n\t%s\n\t_ = errors.As(%s, &%s)\n\treturn %s\n}()",
+			targetType, targetDecl, errExpr, varName, varName)
 
 		diagnostic.SuggestedFixes = []analysis.SuggestedFix{{
 			Message: "Use errors.As() for type assertions on errors",
@@ -829,4 +844,41 @@ func implementsError(t types.Type) bool {
 	}
 
 	return false
+}
+
+// generateErrorVarName creates an appropriate variable name for error type assertions.
+// If originalName is "_" or a generic placeholder, it generates a more meaningful name
+// based on the error type, following Go naming conventions:
+//
+// Examples:
+//   - originalName="_", typeName="MyError" → "myError" (camelCase conversion)
+//   - originalName="_", typeName="pkg.CustomError" → "customError" (package prefix removed)
+//   - originalName="existingName" → "existingName" (original name preserved)
+//   - originalName="_", typeName="" → "myErr" (fallback for unknown types)
+//
+// This helps ensure code readability when converting type assertions to errors.As calls,
+// particularly when dealing with underscore identifiers that can't be referenced.
+func generateErrorVarName(originalName, typeName string) string {
+	// If the original name is not an underscore, use it
+	if originalName != "_" {
+		return originalName
+	}
+
+	// Handle underscore case by generating a name based on the type
+	// Strip any package prefix like "pkg."
+	if lastDot := strings.LastIndex(typeName, "."); lastDot >= 0 {
+		typeName = typeName[lastDot+1:]
+	}
+
+	// Convert first letter to lowercase for camelCase
+	if len(typeName) > 0 {
+		firstChar := strings.ToLower(typeName[:1])
+		if len(typeName) > 1 {
+			return firstChar + typeName[1:]
+		}
+		return firstChar
+	}
+
+	// If we couldn't determine a good name, use default.
+	return "anErr"
 }

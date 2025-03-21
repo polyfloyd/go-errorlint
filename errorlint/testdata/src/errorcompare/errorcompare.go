@@ -20,6 +20,33 @@ func doAnotherThing() error {
 	return io.EOF
 }
 
+type MyError struct{}
+
+func (*MyError) Error() string {
+	return "my custom error"
+}
+
+// CustomUnwrapError demonstrates custom unwrap implementation
+type CustomUnwrapError struct {
+	inner error
+}
+
+func (e *CustomUnwrapError) Error() string { return "custom: " + e.inner.Error() }
+func (e *CustomUnwrapError) Unwrap() error { return e.inner }
+
+// CustomIsError demonstrates custom Is implementation
+type CustomIsError struct{}
+
+func (*CustomIsError) Error() string { return "custom is error" }
+func (*CustomIsError) Is(target error) bool {
+	_, ok := target.(*MyError)
+	return ok
+}
+
+func getCustomIsError() error {
+	return &CustomIsError{}
+}
+
 // This should be flagged - direct comparison with ==
 func CompareWithEquals() {
 	err := doSomething()
@@ -129,5 +156,13 @@ func SwitchOnNonErrorValue() {
 		fmt.Println("Not Found")
 	default:
 		fmt.Println("Unknown status")
+	}
+}
+
+// This should NOT be flagged - using errors.Is with custom Is method
+func UsingErrorsIsWithCustomIs() {
+	err := getCustomIsError()
+	if errors.Is(err, &MyError{}) {
+		fmt.Println("is my error")
 	}
 }
