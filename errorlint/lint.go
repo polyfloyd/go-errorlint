@@ -475,14 +475,8 @@ func LintErrorTypeAssertions(fset *token.FileSet, info *TypesInfoExt) []analysis
 		targetType := exprToString(typeAssert.Type)
 		errExpr := exprToString(typeAssert.X)
 
-		// Check if the type is a pointer type,
-		isPointerType := strings.HasPrefix(targetType, "*")
-		// If it's not a pointer type, we'll need to create a variable of the same type
-		// but still need to pass its address to errors.As.
-		baseType := targetType
-		if isPointerType {
-			baseType = strings.TrimPrefix(targetType, "*")
-		}
+		// Check if the type is a pointer type
+		baseType, isPointerType := strings.CutPrefix(targetType, "*")
 
 		parent := info.NodeParent[typeAssert]
 
