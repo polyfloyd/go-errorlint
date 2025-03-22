@@ -43,3 +43,13 @@ func TestIssueRegressions(t *testing.T) {
 	analyzer := NewAnalyzer()
 	analysistest.Run(t, analysistest.TestData(), analyzer, "issues")
 }
+
+func TestErrorComparisonFixes(t *testing.T) {
+	analyzer := NewAnalyzer()
+	analysistest.RunWithSuggestedFixes(t, analysistest.TestData(), analyzer, "errorcompare")
+}
+
+func TestErrorTypeAssertionFixes(t *testing.T) {
+	analyzer := NewAnalyzer()
+	analysistest.RunWithSuggestedFixes(t, analysistest.TestData(), analyzer, "errorassert")
+}

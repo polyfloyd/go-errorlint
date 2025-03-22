@@ -24,6 +24,24 @@ go-errorlint ./...
 ```
 If there are one or more results, the exit status is set to `1`.
 
+To automatically fix issues where possible, use the `-fix` flag:
+```
+go-errorlint -fix ./...
+```
+
+The tool can automatically fix:
+
+> [!CAUTION]
+> These fixes are still under development and the behavior is not yet stable.
+> It is possible that it will make mistakes and cause more harm than good.
+> Use with caution.
+
+1. Non-wrapping format verb for fmt.Errorf (changing `%v` to `%w`)
+2. Direct error comparisons (replacing `err == ErrFoo` with `errors.Is(err, ErrFoo)`)
+3. Type assertions on errors (replacing `err.(*MyError)` with `errors.As` usage)
+
+Complex cases like switches on errors or type switches cannot be automatically fixed.
+
 
 ## Examples
 
@@ -70,6 +88,8 @@ Errors returned from standard library functions that explicitly document that
 an unwrapped error is returned are allowed by the linter. Notable cases are
 `io.EOF` and `sql.ErrNoRows`.
 
+You can pass `-fix` to have go-errorlint automatically fix these issues for you.
+
 **Caveats**:
 * Comparing the error returned from `(io.Reader).Read` to `io.EOF` without
   `errors.Is` is considered valid as this is
@@ -94,6 +114,8 @@ case *MyError:
 var me MyError
 ok := errors.As(err, &me)
 ```
+
+You can pass `-fix` to have go-errorlint automatically fix these issues for you.
 
 ## Contributing
 
