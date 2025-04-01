@@ -5,14 +5,14 @@ on:
 
 jobs:
 
-  ci:
-    uses: ./.github/workflows/ci.yml
+  test:
+    uses: ./.github/workflows/test.yml
 
   bump:
     runs-on: ubuntu-latest
 
     needs:
-      - ci
+      - test
 
     steps:
     - uses: actions/checkout@v4

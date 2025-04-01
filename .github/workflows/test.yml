@@ -1,4 +1,4 @@
-name: CI
+name: Test
 
 on:
   push:
@@ -20,17 +20,24 @@ jobs:
       with:
         go-version: stable
 
-    - name: Check go mod
-      run: |
+    - run: go get -v -t -d ./...
+    - run: gofmt -s -d .
+    - run: go build -v
+    - run: go test -test.v -race -cover ./...
+
+  go-mod-tidy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-go@v5
+      with:
+        go-version: stable
+
+    - run: |
         go mod tidy
         git diff --exit-code go.mod
         git diff --exit-code go.sum
-    - name: gofmt
-      run: gofmt -s -d .
-    - name: go build
-      run: go build -v
-    - name: go test
-      run: go test -test.v -race -cover ./...
 
   conventional-commits:
     if: github.event_name == 'pull_request' # Only check PRs.
