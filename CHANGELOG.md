@@ -1,3 +1,9 @@
+## v1.8.0 (2025-04-02)
+
+### Feat
+
+- Add automatic error comparison and type assertion fixes (#96)
+
 ## v1.7.1 (2025-02-01)
 
 ### Fix
