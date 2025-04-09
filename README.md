@@ -1,8 +1,6 @@
 go-errorlint
 ============
 
-[![Build Status](https://github.com/polyfloyd/go-errorlint/workflows/CI/badge.svg)](https://github.com/polyfloyd/go-errorlint/actions)
-
 go-errorlint is a source code linter for Go software that can be used to find
 code that will cause problems with the error wrapping scheme introduced in Go
 1.13.
