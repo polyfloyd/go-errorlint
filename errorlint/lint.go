@@ -13,6 +13,139 @@ import (
 	"golang.org/x/tools/go/analysis"
 )
 
+type diagnosticType int
+
+const (
+	typeAssertionDiag diagnosticType = iota
+	errorComparisonDiag
+	otherDiag
+)
+
+const (
+	typeAssertionPattern   = "type assertion on error"
+	errorComparisonPattern = "comparing with"
+)
+
+// classifyDiagnostic determines the type of diagnostic based on its message
+func classifyDiagnostic(diagnostic analysis.Diagnostic) diagnosticType {
+	msg := diagnostic.Message
+	if strings.Contains(msg, typeAssertionPattern) {
+		return typeAssertionDiag
+	}
+	if strings.Contains(msg, errorComparisonPattern) {
+		return errorComparisonDiag
+	}
+	return otherDiag
+}
+
+func hasConflictingDiagnostics(lints []analysis.Diagnostic) bool {
+	var hasTypeAssertion, hasErrorComparison bool
+
+	for _, lint := range lints {
+		switch classifyDiagnostic(lint) {
+		case typeAssertionDiag:
+			hasTypeAssertion = true
+		case errorComparisonDiag:
+			hasErrorComparison = true
+		}
+
+		if hasTypeAssertion && hasErrorComparison {
+			return true
+		}
+	}
+
+	return false
+}
+
+func extractTypeAssignment(init ast.Stmt) (*ast.AssignStmt, *ast.TypeAssertExpr) {
+	assignStmt, ok := init.(*ast.AssignStmt)
+	if !ok || len(assignStmt.Lhs) != 2 || len(assignStmt.Rhs) != 1 {
+		return nil, nil
+	}
+
+	typeAssert, ok := assignStmt.Rhs[0].(*ast.TypeAssertExpr)
+	if !ok {
+		return nil, nil
+	}
+
+	return assignStmt, typeAssert
+}
+
+func extractComparison(cond ast.Expr) *ast.BinaryExpr {
+	binExpr, ok := cond.(*ast.BinaryExpr)
+	if !ok || binExpr.Op != token.LAND {
+		return nil
+	}
+
+	if _, ok := binExpr.X.(*ast.Ident); !ok {
+		return nil
+	}
+	rightBinExpr, ok := binExpr.Y.(*ast.BinaryExpr)
+	if !ok || (rightBinExpr.Op != token.EQL && rightBinExpr.Op != token.NEQ) {
+		return nil
+	}
+
+	return rightBinExpr
+}
+
+func buildVarDeclaration(assertion typeAssertion) string {
+	targetTypeStr := exprToString(assertion.targetType)
+	if strings.HasPrefix(targetTypeStr, "*") {
+		baseType, _ := strings.CutPrefix(targetTypeStr, "*")
+		return fmt.Sprintf("%s := &%s{}", assertion.varName, baseType)
+	}
+	return fmt.Sprintf("var %s %s", assertion.varName, targetTypeStr)
+}
+
+func buildErrorsIsCall(comp comparison) string {
+	comparisonTarget := exprToString(comp.target)
+	comparisonExpr := exprToString(comp.expr)
+
+	if comp.negated {
+		return fmt.Sprintf("!errors.Is(%s, %s)", comparisonExpr, comparisonTarget)
+	}
+	return fmt.Sprintf("errors.Is(%s, %s)", comparisonExpr, comparisonTarget)
+}
+
+func formatBodyStmts(bodyStmts []ast.Stmt) string {
+	if len(bodyStmts) == 0 {
+		return ""
+	}
+
+	var bodyBuf bytes.Buffer
+	for _, stmt := range bodyStmts {
+		if err := printer.Fprint(&bodyBuf, token.NewFileSet(), stmt); err != nil {
+			// TODO: How to handle this? Panic?
+			continue
+		}
+		bodyBuf.WriteString("\n\t\t")
+	}
+	return strings.TrimSpace(bodyBuf.String())
+}
+
+func groupDiagnosticsByIfStmt(lints []analysis.Diagnostic, extInfo *TypesInfoExt) (map[*ast.IfStmt][]analysis.Diagnostic, []analysis.Diagnostic) {
+	ifGroups := make(map[*ast.IfStmt][]analysis.Diagnostic)
+	var otherLints []analysis.Diagnostic
+
+	for _, lint := range lints {
+		node := findNodeAtPosition(extInfo, lint.Pos)
+		if node == nil {
+			otherLints = append(otherLints, lint)
+			continue
+		}
+
+		ifStmt := containingIf(extInfo, node)
+		if ifStmt == nil {
+			otherLints = append(otherLints, lint)
+			continue
+		}
+
+		ifGroups[ifStmt] = append(ifGroups[ifStmt], lint)
+	}
+
+	return ifGroups, otherLints
+}
+
 type ByPosition []analysis.Diagnostic
 
 func (l ByPosition) Len() int      { return len(l) }
@@ -335,7 +468,10 @@ func LintErrorComparisons(info *TypesInfoExt) []analysis.Diagnostic {
 
 			// Print the modified AST to get the fix text.
 			var buf bytes.Buffer
-			printer.Fprint(&buf, token.NewFileSet(), newSwitchStmt)
+			if err := printer.Fprint(&buf, token.NewFileSet(), newSwitchStmt); err != nil {
+				// TODO: How to handle this? Panic?
+				continue
+			}
 			fixText := buf.String()
 
 			diagnostic.SuggestedFixes = []analysis.SuggestedFix{{
@@ -804,7 +940,9 @@ func LintErrorTypeAssertions(fset *token.FileSet, info *TypesInfoExt) []analysis
 
 		// Print the resulting block to get the fix text.
 		var buf bytes.Buffer
-		printer.Fprint(&buf, token.NewFileSet(), blockStmt)
+		if err := printer.Fprint(&buf, token.NewFileSet(), blockStmt); err != nil {
+			continue
+		}
 		fixText := buf.String()
 
 		diagnostic.SuggestedFixes = []analysis.SuggestedFix{{
@@ -879,4 +1017,236 @@ func generateErrorVarName(originalName, typeName string) string {
 
 	// If we couldn't determine a good name, use default.
 	return "anErr"
+}
+
+func resolveConflicts(lints []analysis.Diagnostic, extInfo *TypesInfoExt) []analysis.Diagnostic {
+	ifGroups, otherLints := groupDiagnosticsByIfStmt(lints, extInfo)
+
+	var result []analysis.Diagnostic
+
+	for ifStmt, groupLints := range ifGroups {
+		if len(groupLints) <= 1 {
+			result = append(result, groupLints...)
+			continue
+		}
+
+		if hasConflictingDiagnostics(groupLints) {
+			if combined := createCombinedDiagnostic(ifStmt, groupLints, extInfo); combined != nil {
+				result = append(result, *combined)
+				continue
+			}
+		}
+
+		result = append(result, groupLints...)
+	}
+
+	return append(result, otherLints...)
+}
+
+func findNodeAtPosition(extInfo *TypesInfoExt, pos token.Pos) ast.Node {
+	// First check type-checked expressions (most common case)
+	for node := range extInfo.TypesInfo.Types {
+		if nodeContainsPos(node, pos) {
+			return node
+		}
+	}
+
+	// Fallback: check scopes
+	for scope := range extInfo.TypesInfo.Scopes {
+		if nodeContainsPos(scope, pos) {
+			return scope
+		}
+	}
+
+	return nil
+}
+
+// nodeContainsPos checks if a node contains the given position
+func nodeContainsPos(node ast.Node, pos token.Pos) bool {
+	return node.Pos() <= pos && pos < node.End()
+}
+
+// containingIf finds the if statement that contains the given node
+// by walking up the AST parent chain.
+func containingIf(extInfo *TypesInfoExt, node ast.Node) *ast.IfStmt {
+	current := node
+	for current != nil {
+		if ifStmt, ok := current.(*ast.IfStmt); ok {
+			return ifStmt
+		}
+		parent := extInfo.NodeParent[current]
+		if parent == nil {
+			break
+		}
+		current = parent
+	}
+	return nil
+}
+
+// createCombinedDiagnostic creates a single diagnostic that handles both
+// type assertion and error comparison issues in the same if statement.
+// It generates a combined suggested fix that uses both errors.As and errors.Is.
+func createCombinedDiagnostic(ifStmt *ast.IfStmt, lints []analysis.Diagnostic, extInfo *TypesInfoExt) *analysis.Diagnostic {
+	// Find the earliest position for the combined diagnostic
+	earliestPos := token.NoPos
+	for _, lint := range lints {
+		if earliestPos == token.NoPos || lint.Pos < earliestPos {
+			earliestPos = lint.Pos
+		}
+	}
+
+	// Create the combined diagnostic
+	combined := &analysis.Diagnostic{
+		Pos:     earliestPos,
+		Message: "type assertion and error comparison will fail on wrapped errors. Use errors.As and errors.Is to check for specific errors",
+	}
+
+	// Try to create a combined fix for the if statement
+	suggestedFix := combinedFix(ifStmt, extInfo)
+	if suggestedFix != nil {
+		combined.SuggestedFixes = []analysis.SuggestedFix{*suggestedFix}
+	}
+
+	return combined
+}
+
+// combinedFix creates a suggested fix that handles both type assertion
+// and error comparison in the same if statement.
+// Transforms: if e, ok := err.(*Type); ok && e.Field == value {
+// Into: e := &Type{}; if errors.As(err, &e) && errors.Is(e.Field, value) {
+func combinedFix(ifStmt *ast.IfStmt, extInfo *TypesInfoExt) *analysis.SuggestedFix {
+	// Parse the if statement structure to extract components
+	components := parseIfComponents(ifStmt)
+	if components == nil {
+		return nil
+	}
+
+	// Check if this is an else-if statement
+	components.context.isElseIf = isElseIfStatement(ifStmt, extInfo)
+
+	// Build the replacement text using the extracted components
+	replacement := buildReplacement(components)
+	if replacement == "" {
+		return nil
+	}
+
+	// Determine the replacement range based on whether it's an else-if
+	endPos := ifStmt.Body.Pos()
+	if components.context.isElseIf {
+		// For else-if cases, we need to replace from the "if" to the end of the block
+		// to properly handle the transformation
+		endPos = ifStmt.Body.End()
+	}
+
+	return &analysis.SuggestedFix{
+		Message: "Use errors.As and errors.Is for error handling",
+		TextEdits: []analysis.TextEdit{{
+			Pos:     ifStmt.Pos(),
+			End:     endPos,
+			NewText: []byte(replacement),
+		}},
+	}
+}
+
+// isElseIfStatement checks if the given if statement is part of an else-if construct
+// by checking if it's in the Else field of a parent if statement.
+func isElseIfStatement(ifStmt *ast.IfStmt, extInfo *TypesInfoExt) bool {
+	parent := extInfo.NodeParent[ifStmt]
+	if parent == nil {
+		return false
+	}
+
+	// Check if the parent is an if statement's Else field
+	if parentIf, ok := parent.(*ast.IfStmt); ok {
+		return parentIf.Else == ifStmt
+	}
+
+	return false
+}
+
+// typeAssertion holds type assertion specific data
+type typeAssertion struct {
+	varName    string
+	errorExpr  ast.Expr
+	targetType ast.Expr
+}
+
+// comparison holds error comparison specific data
+type comparison struct {
+	expr    ast.Expr
+	target  ast.Expr
+	negated bool
+}
+
+// context holds if statement context information
+type context struct {
+	isElseIf  bool
+	bodyStmts []ast.Stmt
+}
+
+// ifComponents holds the parsed components of an if statement
+// that can be converted to use errors.As and errors.Is.
+type ifComponents struct {
+	assertion  typeAssertion
+	comparison comparison
+	context    context
+}
+
+// parseIfComponents extracts the components of the if statement pattern
+// we want to fix: if e, ok := err.(*Type); ok && e.Field == value {
+func parseIfComponents(ifStmt *ast.IfStmt) *ifComponents {
+	if ifStmt.Init == nil || ifStmt.Cond == nil {
+		return nil
+	}
+
+	assignStmt, typeAssert := extractTypeAssignment(ifStmt.Init)
+	if assignStmt == nil || typeAssert == nil {
+		return nil
+	}
+
+	rightBinExpr := extractComparison(ifStmt.Cond)
+	if rightBinExpr == nil {
+		return nil
+	}
+
+	varIdent, ok := assignStmt.Lhs[0].(*ast.Ident)
+	if !ok {
+		return nil
+	}
+
+	return &ifComponents{
+		assertion: typeAssertion{
+			varName:    varIdent.Name,
+			errorExpr:  typeAssert.X,
+			targetType: typeAssert.Type,
+		},
+		comparison: comparison{
+			expr:    rightBinExpr.X,
+			target:  rightBinExpr.Y,
+			negated: rightBinExpr.Op == token.NEQ,
+		},
+		context: context{
+			isElseIf:  false,            // Will be set by the calling function if needed
+			bodyStmts: ifStmt.Body.List, // Capture body statements
+		},
+	}
+}
+
+// buildReplacement creates the replacement text using proper formatting.
+// It generates code like: e := &Type{}; if errors.As(err, &e) && errors.Is(e.Field, value) {
+func buildReplacement(components *ifComponents) string {
+	var (
+		errExpr      = exprToString(components.assertion.errorExpr)
+		varDecl      = buildVarDeclaration(components.assertion)
+		errorsIsCall = buildErrorsIsCall(components.comparison)
+	)
+
+	if components.context.isElseIf {
+		bodyText := formatBodyStmts(components.context.bodyStmts)
+		return fmt.Sprintf("{\n\t\t%s\n\t\tif errors.As(%s, &%s) && %s {\n\t\t\t%s\n\t\t}\n\t}",
+			varDecl, errExpr, components.assertion.varName, errorsIsCall, bodyText)
+	}
+
+	return fmt.Sprintf("%s\n\tif errors.As(%s, &%s) && %s ",
+		varDecl, errExpr, components.assertion.varName, errorsIsCall)
 }
