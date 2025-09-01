@@ -90,8 +90,7 @@ func extractComparison(cond ast.Expr) *ast.BinaryExpr {
 
 func buildVarDeclaration(assertion typeAssertion) string {
 	targetTypeStr := exprToString(assertion.targetType)
-	if strings.HasPrefix(targetTypeStr, "*") {
-		baseType, _ := strings.CutPrefix(targetTypeStr, "*")
+	if baseType, found := strings.CutPrefix(targetTypeStr, "*") ; found {
 		return fmt.Sprintf("%s := &%s{}", assertion.varName, baseType)
 	}
 	return fmt.Sprintf("var %s %s", assertion.varName, targetTypeStr)
