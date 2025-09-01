@@ -1066,9 +1066,9 @@ func nodeContainsPos(node ast.Node, pos token.Pos) bool {
 	return node.Pos() <= pos && pos < node.End()
 }
 
-// containingIf finds the if statement that contains the given node
+// statementContainsIf finds the if statement that contains the given node
 // by walking up the AST parent chain.
-func containingIf(extInfo *TypesInfoExt, node ast.Node) *ast.IfStmt {
+func statementContainsIf(extInfo *TypesInfoExt, node ast.Node) *ast.IfStmt {
 	current := node
 	for current != nil {
 		if ifStmt, ok := current.(*ast.IfStmt); ok {
