@@ -44,6 +44,11 @@ func TestIssueRegressions(t *testing.T) {
 	analysistest.Run(t, analysistest.TestData(), analyzer, "issues/lint")
 }
 
+func TestIssueFixRegressions(t *testing.T) {
+	analyzer := NewAnalyzer()
+	analysistest.RunWithSuggestedFixes(t, analysistest.TestData(), analyzer, "issues/fix")
+}
+
 func TestErrorComparisonFixes(t *testing.T) {
 	analyzer := NewAnalyzer()
 	analysistest.RunWithSuggestedFixes(t, analysistest.TestData(), analyzer, "errorcompare")
@@ -54,7 +59,7 @@ func TestErrorTypeAssertionFixes(t *testing.T) {
 	analysistest.RunWithSuggestedFixes(t, analysistest.TestData(), analyzer, "errorassert")
 }
 
-func TestIssueFixRegressions(t *testing.T) {
+func TestASTManipulationFixes(t *testing.T) {
 	analyzer := NewAnalyzer()
-	analysistest.RunWithSuggestedFixes(t, analysistest.TestData(), analyzer, "issues/fix")
+	analysistest.RunWithSuggestedFixes(t, analysistest.TestData(), analyzer, "astmanipulation")
 }

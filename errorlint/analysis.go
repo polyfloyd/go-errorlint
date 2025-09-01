@@ -40,7 +40,7 @@ func run(pass *analysis.Pass) (interface{}, error) {
 	var lints []analysis.Diagnostic
 	extInfo := newTypesInfoExt(pass)
 	if checkComparison {
-		l := LintErrorComparisons(extInfo)
+		l := LintErrorComparisons(pass.Fset, extInfo)
 		lints = append(lints, l...)
 	}
 	if checkAsserts {

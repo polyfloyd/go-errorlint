@@ -1,6 +1,7 @@
 package issues
 
 import (
+	"errors"
 	"os"
 	"syscall"
 )

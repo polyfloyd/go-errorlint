@@ -13,40 +13,32 @@ import (
 	"golang.org/x/tools/go/analysis"
 )
 
-type diagnosticType int
+type diagnosticCategory string
 
 const (
-	typeAssertionDiag diagnosticType = iota
-	errorComparisonDiag
-	otherDiag
+	categoryTypeAssertion   diagnosticCategory = "type-assertion"
+	categoryErrorComparison diagnosticCategory = "error-comparison"
+	categoryCombinedError   diagnosticCategory = "combined-error"
+	categoryFormatVerb      diagnosticCategory = "format-verb"
+	unknownDiagnostic       diagnosticCategory = ""
 )
 
 const (
-	typeAssertionPattern   = "type assertion on error"
-	errorComparisonPattern = "comparing with"
+	msgTypeAssertion   = "type assertion on error"
+	msgErrorComparison = "comparing with"
 )
-
-// classifyDiagnostic determines the type of diagnostic based on its message
-func classifyDiagnostic(diagnostic analysis.Diagnostic) diagnosticType {
-	msg := diagnostic.Message
-	if strings.Contains(msg, typeAssertionPattern) {
-		return typeAssertionDiag
-	}
-	if strings.Contains(msg, errorComparisonPattern) {
-		return errorComparisonDiag
-	}
-	return otherDiag
-}
 
 func hasConflictingDiagnostics(lints []analysis.Diagnostic) bool {
 	var hasTypeAssertion, hasErrorComparison bool
 
 	for _, lint := range lints {
-		switch classifyDiagnostic(lint) {
-		case typeAssertionDiag:
+		switch diagnosticCategory(lint.Category) {
+		case categoryTypeAssertion:
 			hasTypeAssertion = true
-		case errorComparisonDiag:
+		case categoryErrorComparison:
 			hasErrorComparison = true
+		case categoryCombinedError:
+			return true
 		}
 
 		if hasTypeAssertion && hasErrorComparison {
@@ -90,7 +82,7 @@ func extractComparison(cond ast.Expr) *ast.BinaryExpr {
 
 func buildVarDeclaration(assertion typeAssertion) string {
 	targetTypeStr := exprToString(assertion.targetType)
-	if baseType, found := strings.CutPrefix(targetTypeStr, "*") ; found {
+	if baseType, found := strings.CutPrefix(targetTypeStr, "*"); found {
 		return fmt.Sprintf("%s := &%s{}", assertion.varName, baseType)
 	}
 	return fmt.Sprintf("var %s %s", assertion.varName, targetTypeStr)
@@ -133,7 +125,7 @@ func groupDiagnosticsByIfStmt(lints []analysis.Diagnostic, extInfo *TypesInfoExt
 			continue
 		}
 
-		ifStmt := containingIf(extInfo, node)
+		ifStmt := statementContainsIf(extInfo, node)
 		if ifStmt == nil {
 			otherLints = append(otherLints, lint)
 			continue
@@ -190,8 +182,9 @@ func LintFmtErrorfCalls(fset *token.FileSet, info types.Info, multipleWraps bool
 					wrapCount++
 					if wrapCount > 1 {
 						lints = append(lints, analysis.Diagnostic{
-							Message: "only one %w verb is permitted per format string",
-							Pos:     arg.Pos(),
+							Category: string(categoryFormatVerb),
+							Message:  "only one %w verb is permitted per format string",
+							Pos:      arg.Pos(),
 						})
 						break
 					}
@@ -199,8 +192,9 @@ func LintFmtErrorfCalls(fset *token.FileSet, info types.Info, multipleWraps bool
 
 				if wrapCount == 0 {
 					lints = append(lints, analysis.Diagnostic{
-						Message: "non-wrapping format verb for fmt.Errorf. Use `%w` to format errors",
-						Pos:     args[i].Pos(),
+						Category: string(categoryFormatVerb),
+						Message:  "non-wrapping format verb for fmt.Errorf. Use `%w` to format errors",
+						Pos:      args[i].Pos(),
 					})
 					break
 				}
@@ -230,8 +224,9 @@ func LintFmtErrorfCalls(fset *token.FileSet, info types.Info, multipleWraps bool
 				strStart := call.Args[0].Pos()
 				if lint == nil {
 					lint = &analysis.Diagnostic{
-						Message: "non-wrapping format verb for fmt.Errorf. Use `%w` to format errors",
-						Pos:     arg.Pos(),
+						Category: string(categoryFormatVerb),
+						Message:  "non-wrapping format verb for fmt.Errorf. Use `%w` to format errors",
+						Pos:      arg.Pos(),
 					}
 				}
 				fixMessage := "Use `%w` to format errors"
@@ -297,7 +292,7 @@ func isFmtErrorfCallExpr(info types.Info, expr ast.Expr) (*ast.CallExpr, bool) {
 	return nil, false
 }
 
-func LintErrorComparisons(info *TypesInfoExt) []analysis.Diagnostic {
+func LintErrorComparisons(fset *token.FileSet, info *TypesInfoExt) []analysis.Diagnostic {
 	var lints []analysis.Diagnostic
 
 	// Check for error comparisons.
@@ -328,8 +323,9 @@ func LintErrorComparisons(info *TypesInfoExt) []analysis.Diagnostic {
 		}
 
 		diagnostic := analysis.Diagnostic{
-			Message: fmt.Sprintf("comparing with %s will fail on wrapped errors. Use errors.Is to check for a specific error", binExpr.Op),
-			Pos:     binExpr.Pos(),
+			Category: string(categoryErrorComparison),
+			Message:  fmt.Sprintf("comparing with %s will fail on wrapped errors. Use errors.Is to check for a specific error", binExpr.Op),
+			Pos:      binExpr.Pos(),
 		}
 
 		// Add suggested fix.
@@ -353,13 +349,20 @@ func LintErrorComparisons(info *TypesInfoExt) []analysis.Diagnostic {
 			replacement = "!" + replacement
 		}
 
+		textEdits := []analysis.TextEdit{{
+			Pos:     binExpr.Pos(),
+			End:     binExpr.End(),
+			NewText: []byte(replacement),
+		}}
+
+		if file := findContainingFile(info, binExpr); file != nil && needsErrorsImport(file) {
+			importFix := createImportFix(file)
+			textEdits = append(textEdits, importFix.TextEdits...)
+		}
+
 		diagnostic.SuggestedFixes = []analysis.SuggestedFix{{
-			Message: "Use errors.Is() to compare errors",
-			TextEdits: []analysis.TextEdit{{
-				Pos:     binExpr.Pos(),
-				End:     binExpr.End(),
-				NewText: []byte(replacement),
-			}},
+			Message:   "Use errors.Is() to compare errors",
+			TextEdits: textEdits,
 		}}
 
 		lints = append(lints, diagnostic)
@@ -403,8 +406,9 @@ func LintErrorComparisons(info *TypesInfoExt) []analysis.Diagnostic {
 
 		if switchComparesNonNil(switchStmt) {
 			diagnostic := analysis.Diagnostic{
-				Message: "switch on an error will fail on wrapped errors. Use errors.Is to check for specific errors",
-				Pos:     problematicCaseClause.Pos(),
+				Category: string(categoryErrorComparison),
+				Message:  "switch on an error will fail on wrapped errors. Use errors.Is to check for specific errors",
+				Pos:      problematicCaseClause.Pos(),
 			}
 
 			// Create a simpler version of the fix for switch statements
@@ -489,7 +493,49 @@ func LintErrorComparisons(info *TypesInfoExt) []analysis.Diagnostic {
 	return lints
 }
 
-// exprToString converts an expression to its string representation.
+func findContainingFile(info *TypesInfoExt, node ast.Node) *ast.File {
+	current := node
+	for current != nil {
+		if file, ok := current.(*ast.File); ok {
+			return file
+		}
+		current = info.NodeParent[current]
+	}
+	return nil
+}
+
+func needsErrorsImport(file *ast.File) bool {
+	for _, imp := range file.Imports {
+		if imp.Path.Value == `"errors"` {
+			return false
+		}
+	}
+	return true
+}
+
+func createImportFix(file *ast.File) analysis.SuggestedFix {
+	var importPos token.Pos
+	var newText string
+
+	if len(file.Imports) > 0 {
+		lastImport := file.Imports[len(file.Imports)-1]
+		importPos = lastImport.End()
+		newText = "\n\t\"errors\""
+	} else {
+		importPos = file.Name.End()
+		newText = "\n\nimport \"errors\""
+	}
+
+	return analysis.SuggestedFix{
+		Message: "Add missing errors import",
+		TextEdits: []analysis.TextEdit{{
+			Pos:     importPos,
+			End:     importPos,
+			NewText: []byte(newText),
+		}},
+	}
+}
+
 func exprToString(expr ast.Expr) string {
 	switch e := expr.(type) {
 	case *ast.Ident:
@@ -606,8 +652,9 @@ func LintErrorTypeAssertions(fset *token.FileSet, info *TypesInfoExt) []analysis
 		}
 
 		diagnostic := analysis.Diagnostic{
-			Message: "type assertion on error will fail on wrapped errors. Use errors.As to check for specific errors",
-			Pos:     typeAssert.Pos(),
+			Category: string(categoryTypeAssertion),
+			Message:  "type assertion on error will fail on wrapped errors. Use errors.As to check for specific errors",
+			Pos:      typeAssert.Pos(),
 		}
 
 		// Create suggested fix for type assertion
@@ -770,8 +817,9 @@ func LintErrorTypeAssertions(fset *token.FileSet, info *TypesInfoExt) []analysis
 		}
 
 		diagnostic := analysis.Diagnostic{
-			Message: "type switch on error will fail on wrapped errors. Use errors.As to check for specific errors",
-			Pos:     typeAssert.Pos(),
+			Category: string(categoryTypeAssertion),
+			Message:  "type switch on error will fail on wrapped errors. Use errors.As to check for specific errors",
+			Pos:      typeAssert.Pos(),
 		}
 
 		// Transform type switch into a switch statement with errors.As in each case
@@ -1096,8 +1144,9 @@ func createCombinedDiagnostic(ifStmt *ast.IfStmt, lints []analysis.Diagnostic, e
 
 	// Create the combined diagnostic
 	combined := &analysis.Diagnostic{
-		Pos:     earliestPos,
-		Message: "type assertion and error comparison will fail on wrapped errors. Use errors.As and errors.Is to check for specific errors",
+		Category: string(categoryCombinedError),
+		Pos:      earliestPos,
+		Message:  "type assertion and error comparison will fail on wrapped errors. Use errors.As and errors.Is to check for specific errors",
 	}
 
 	// Try to create a combined fix for the if statement
@@ -1123,6 +1172,9 @@ func combinedFix(ifStmt *ast.IfStmt, extInfo *TypesInfoExt) *analysis.SuggestedF
 	// Check if this is an else-if statement
 	components.context.isElseIf = isElseIfStatement(ifStmt, extInfo)
 
+	// Handle else-if transformations carefully
+	// Note: else-if transformations change structure but preserve functionality
+
 	// Build the replacement text using the extracted components
 	replacement := buildReplacement(components)
 	if replacement == "" {
@@ -1137,13 +1189,21 @@ func combinedFix(ifStmt *ast.IfStmt, extInfo *TypesInfoExt) *analysis.SuggestedF
 		endPos = ifStmt.Body.End()
 	}
 
+	textEdits := []analysis.TextEdit{{
+		Pos:     ifStmt.Pos(),
+		End:     endPos,
+		NewText: []byte(replacement),
+	}}
+
+	// Add errors import if needed
+	if file := findContainingFile(extInfo, ifStmt); file != nil && needsErrorsImport(file) {
+		importFix := createImportFix(file)
+		textEdits = append(textEdits, importFix.TextEdits...)
+	}
+
 	return &analysis.SuggestedFix{
-		Message: "Use errors.As and errors.Is for error handling",
-		TextEdits: []analysis.TextEdit{{
-			Pos:     ifStmt.Pos(),
-			End:     endPos,
-			NewText: []byte(replacement),
-		}},
+		Message:   "Use errors.As and errors.Is for error handling",
+		TextEdits: textEdits,
 	}
 }
 
@@ -1177,8 +1237,8 @@ type comparison struct {
 	negated bool
 }
 
-// context holds if statement context information
-type context struct {
+// controlFlowContext holds if statement controlFlowContext information
+type controlFlowContext struct {
 	isElseIf  bool
 	bodyStmts []ast.Stmt
 }
@@ -1188,7 +1248,7 @@ type context struct {
 type ifComponents struct {
 	assertion  typeAssertion
 	comparison comparison
-	context    context
+	context    controlFlowContext
 }
 
 // parseIfComponents extracts the components of the if statement pattern
@@ -1224,7 +1284,7 @@ func parseIfComponents(ifStmt *ast.IfStmt) *ifComponents {
 			target:  rightBinExpr.Y,
 			negated: rightBinExpr.Op == token.NEQ,
 		},
-		context: context{
+		context: controlFlowContext{
 			isElseIf:  false,            // Will be set by the calling function if needed
 			bodyStmts: ifStmt.Body.List, // Capture body statements
 		},
