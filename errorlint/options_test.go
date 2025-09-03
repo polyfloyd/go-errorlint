@@ -27,6 +27,16 @@ func TestOption(t *testing.T) {
 			}),
 			pattern: "options/withAllowedWildcard",
 		},
+		{
+			desc: "WithComparison",
+			opt: errorlint.WithComparison(true),
+			pattern: "options/withComparison",
+		},
+		{
+			desc: "WithAsserts",
+			opt: errorlint.WithAsserts(true),
+			pattern: "options/withAsserts",
+		},
 	}
 
 	for _, tt := range testCases {
