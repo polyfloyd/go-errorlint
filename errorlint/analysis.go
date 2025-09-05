@@ -40,7 +40,7 @@ func run(pass *analysis.Pass) (interface{}, error) {
 	var lints []analysis.Diagnostic
 	extInfo := newTypesInfoExt(pass)
 	if checkComparison {
-		l := LintErrorComparisons(extInfo)
+		l := LintErrorComparisons(pass.Fset, extInfo)
 		lints = append(lints, l...)
 	}
 	if checkAsserts {
@@ -51,6 +51,10 @@ func run(pass *analysis.Pass) (interface{}, error) {
 		l := LintFmtErrorfCalls(pass.Fset, *pass.TypesInfo, checkErrorfMulti)
 		lints = append(lints, l...)
 	}
+
+	// Resolve conflicts between type assertion and error comparison diagnostics
+	lints = resolveConflicts(lints, extInfo)
+
 	sort.Sort(ByPosition(lints))
 
 	for _, l := range lints {
@@ -78,11 +82,15 @@ func newTypesInfoExt(pass *analysis.Pass) *TypesInfoExt {
 		}
 		stack := []ast.Node{file}
 		ast.Inspect(file, func(n ast.Node) bool {
-			nodeParent[n] = stack[len(stack)-1]
-			if n == nil {
-				stack = stack[:len(stack)-1]
-			} else {
+			if n != nil && len(stack) > 0 {
+				// Only set parent if the node is not the same as the current stack top
+				// This prevents self-references that cause infinite loops
+				if n != stack[len(stack)-1] {
+					nodeParent[n] = stack[len(stack)-1]
+				}
 				stack = append(stack, n)
+			} else if n == nil {
+				stack = stack[:len(stack)-1]
 			}
 			return true
 		})

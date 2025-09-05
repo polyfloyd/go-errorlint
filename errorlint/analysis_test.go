@@ -41,7 +41,12 @@ func TestAllowedComparisons(t *testing.T) {
 
 func TestIssueRegressions(t *testing.T) {
 	analyzer := NewAnalyzer()
-	analysistest.Run(t, analysistest.TestData(), analyzer, "issues")
+	analysistest.Run(t, analysistest.TestData(), analyzer, "issues/lint")
+}
+
+func TestIssueFixRegressions(t *testing.T) {
+	analyzer := NewAnalyzer()
+	analysistest.RunWithSuggestedFixes(t, analysistest.TestData(), analyzer, "issues/fix")
 }
 
 func TestErrorComparisonFixes(t *testing.T) {
@@ -52,4 +57,9 @@ func TestErrorComparisonFixes(t *testing.T) {
 func TestErrorTypeAssertionFixes(t *testing.T) {
 	analyzer := NewAnalyzer()
 	analysistest.RunWithSuggestedFixes(t, analysistest.TestData(), analyzer, "errorassert")
+}
+
+func TestASTManipulationFixes(t *testing.T) {
+	analyzer := NewAnalyzer()
+	analysistest.RunWithSuggestedFixes(t, analysistest.TestData(), analyzer, "astmanipulation")
 }
