@@ -672,8 +672,8 @@ func LintErrorTypeAssertions(fset *token.FileSet, info *TypesInfoExt) []analysis
 		for _, stmt := range typeSwitch.Body.List {
 			caseClause := stmt.(*ast.CaseClause)
 			for _, typeExpr := range caseClause.List {
-				// Skip default case (empty list)
-				if typeExpr != nil {
+				// Skip default case (empty list) and nil comparisons.
+				if typeExpr != nil && !isNil(typeExpr) {
 					caseTypes = append(caseTypes, typeExpr)
 				}
 			}
@@ -757,6 +757,16 @@ func LintErrorTypeAssertions(fset *token.FileSet, info *TypesInfoExt) []analysis
 			newCaseClause.List = make([]ast.Expr, len(caseClause.List))
 
 			for j, typeExpr := range caseClause.List {
+				// Nil cases should become err == nil.
+				if isNil(typeExpr) {
+					newCaseClause.List[j] = &ast.BinaryExpr{
+						X:  errExpr,
+						Op: token.EQL,
+						Y:  typeExpr,
+					}
+					continue
+				}
+
 				// Get the previously declared variable for this type.
 				varName := typeToVar[typeExpr]
 

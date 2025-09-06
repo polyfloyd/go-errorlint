@@ -122,6 +122,8 @@ func TypeSwitchStatement() {
 		fmt.Println("my error")
 	case *AnotherError:
 		fmt.Println("another error")
+	case nil:
+		fmt.Println("no error")
 	default:
 		fmt.Println("unknown error")
 	}
