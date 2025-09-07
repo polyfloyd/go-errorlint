@@ -176,6 +176,17 @@ func TypeSwitchWithAssignment() {
 	}
 }
 
+// This should be flagged - type switch with assignment reuse
+func TypeSwitchWithAssignmentReuse() {
+	err := doSomething()
+	switch err := err.(type) { // want "type switch on error will fail on wrapped errors. Use errors.As to check for specific errors"
+	case *MyError:
+		fmt.Println("my error:", err)
+	default:
+		fmt.Println("unknown error:", err)
+	}
+}
+
 // This should NOT be flagged - using errors.As
 func UsingErrorsAs() {
 	err := doSomethingWrapped()
